@@ -1,0 +1,3 @@
+build/*
+ironbee-libhtp*
+*.swp
