@@ -107,6 +107,7 @@ categories:
   basic sanity checks have passed.
 * request_trailer: Called right after all the request headers have been parsed.
 * request: Called right after an entire request is parsed.
+* response_start: Called as soon as the parser is ready for a response.
 * response_line: Called right after the response line has been parsed.
 * response_headers: Called right after all the headers have been parsed and
   basic sanity checks have passed.
@@ -370,6 +371,7 @@ When the callbacks are called are documented elsewhere.
 * register_request_body_data(callback)
 * register_request_trailer(callback)
 * register_request(callback)
+* register_response_start(callback)
 * register_response_line(callback)
 * register_response_headers(callback)
 * register_response_body_data(callback)

@@ -8,11 +8,11 @@ import os, os.path
 pathjoin = os.path.join
 
 # Despite 0.2.5, this is a tarball from the master branch of
-# https://github.com/ironbee/libhtp at commit 2c562f5. Their download
+# https://github.com/ironbee/libhtp at commit e5ea6e91ae. Their download
 # still labels it as 0.2.5?
 PKGVER   = '0.2.5'
-GITVER   = '2c562f5'
-PKGNAME  = 'ironbee-libhtp-' + PKGVER + '-251-g' + GITVER
+GITVER   = 'e5ea6e9'
+PKGNAME  = 'ironbee-libhtp-' + PKGVER + '-291-g' + GITVER
 PKGTAR   = PKGNAME + '.tar.gz'
 BUILDDIR = 'ironbee-libhtp-' + GITVER
 
@@ -54,7 +54,7 @@ EXTRA_OBJECTS = htpyMaker.extra_objects + EXTRA_OBJECTS
 
 setup (# Distribution meta-data
         name = "htpy",
-        version = "0.3",
+        version = "0.4",
         description = "python bindings for libhtp",
         author = "Wesley Shields",
         author_email = "wshields@mitre.org",
@@ -69,5 +69,5 @@ setup (# Distribution meta-data
                             extra_objects = EXTRA_OBJECTS
                         ) 
                       ],
-        url = "http://github.com/wxsBSD/htpy",
+        url = "http://github.com/MITRECND/htpy",
       )

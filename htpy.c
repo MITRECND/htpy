@@ -27,7 +27,7 @@
 #include <structmember.h>
 #include "htp.h"
 
-#define HTPY_VERSION "0.3"
+#define HTPY_VERSION "0.4"
 
 static PyObject *htpy_error;
 static PyObject *htpy_stop;
@@ -271,6 +271,7 @@ typedef struct {
 	PyObject *request_body_data_callback;
 	PyObject *request_trailer_callback;
 	PyObject *request_callback;
+	PyObject *response_start_callback;
 	PyObject *response_line_callback;
 	PyObject *response_headers_callback;
 	PyObject *response_body_data_callback;
@@ -359,6 +360,7 @@ CALLBACK(request_uri_normalize)
 CALLBACK(request_headers)
 CALLBACK(request_trailer)
 CALLBACK(request)
+CALLBACK(response_start)
 CALLBACK(response_line)
 CALLBACK(response_headers)
 CALLBACK(response_trailer)
@@ -442,6 +444,7 @@ REGISTER_CALLBACK(request_headers)
 REGISTER_CALLBACK(request_body_data)
 REGISTER_CALLBACK(request_trailer)
 REGISTER_CALLBACK(request)
+REGISTER_CALLBACK(response_start)
 REGISTER_CALLBACK(response_line)
 REGISTER_CALLBACK(response_headers)
 REGISTER_CALLBACK(response_body_data)
@@ -764,6 +767,9 @@ static PyMethodDef htpy_connp_methods[] = {
 	  "Register a hook for right after headers have been parsed." },
 	{ "register_request", htpy_connp_register_request, METH_VARARGS,
 	  "Register a callback for when the entire request is parsed." },
+	{ "register_response_start", htpy_connp_register_response_start,
+	  METH_VARARGS,
+	  "Register a hook for as soon as a response is about to start." },
 	{ "register_response_line", htpy_connp_register_response_line,
 	  METH_VARARGS,
 	  "Register a hook for right after response line has been parsed." },
