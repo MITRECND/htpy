@@ -75,7 +75,7 @@ Callback functions must return one of the following values.
 * htpy.HOOK_OK
 * htpy.HOOK_ERROR
 * htpy.HOOK_STOP
-* htpy.HOOK_DECLINE ('''XXX: What does this do?''')
+* htpy.HOOK_DECLINE (XXX: What does this do?)
 
 ###HOOK_STOP vs HOOK_ERROR
 When libhtp is given the HOOK_ERROR return value it sets the parser state to an
@@ -96,7 +96,7 @@ callable python block. There are a number of callbacks, which fall into three
 categories:
 
 <b>Regular callbacks:</b>
-* transaction_start: Called as soon as a new transaction is started. ('''XXX: DEFINE A TRANSACTION!''')
+* transaction_start: Called as soon as a new transaction is started. (XXX: DEFINE A TRANSACTION!)
 * request_line: Called after the request line has been parsed.
 * request_uri_normalize: Called right before the URI is normalized. When a URI
   is normalized default fields are filled in if they are not specified. This
@@ -241,7 +241,7 @@ Configuration objects contain the following attributes. In many cases the value 
   directly to the levels used internally by libhtp.
  * htpy.HTP_LOG_ERROR (1)
  * htpy.HTP_LOG_WARNING (2)
- * htpy.HTP_LOG_NOTICE (3, '''DEFAULT''')
+ * htpy.HTP_LOG_NOTICE (3, DEFAULT)
  * htpy.HTP_LOG_INFO (4)
  * htpy.HTP_LOG_DEBUG (5)
  * htpy.HTP_LOG_DEBUG2 (6)
@@ -249,7 +249,7 @@ Configuration objects contain the following attributes. In many cases the value 
   value to determine how to parse the data (some servers normalize differently,
   treat path separators differently, etc). Htpy provides macros that map
   directly to the values used internally by libhtp.
- * htpy.HTP_SERVER_MINIMAL ('''DEFAULT''')
+ * htpy.HTP_SERVER_MINIMAL (DEFAULT)
  * htpy.HTP_SERVER_GENERIC
  * htpy.HTP_SERVER_IDS
  * htpy.HTP_SERVER_IIS_4_0
@@ -261,27 +261,27 @@ Configuration objects contain the following attributes. In many cases the value 
  * htpy.HTP_SERVER_TOMCAT_6_0
  * htpy.HTP_SERVER_APACHE
  * htpy.HTP_SERVER_APACHE_2_2
-* path_case_insensitive: Convert URI path element to lower case. '''DEFAULT: 0,
-  though can change if you set spersonality'''
+* path_case_insensitive: Convert URI path element to lower case. DEFAULT: 0,
+  though can change if you set spersonality
 * path_compress_separators: Compress sequential path separators. Backslash and
-  decode separators are used before compression. '''DEFAULT: 0'''
-* path_backslash_separators: Treat backslash as a path separator. '''DEFAULT:
-  0'''
+  decode separators are used before compression. DEFAULT: 0
+* path_backslash_separators: Treat backslash as a path separator. DEFAULT:
+  0
 * path_control_char_handling: How should the parser expect a path with a
   control char to be handled.
- * htpy.NONE ('''DEFAULT''')
+ * htpy.NONE (DEFAULT)
  * htpy.STATUS_400
 * path_convert_utf8: Convert UTF-8 to single byte stream using default best-fit
   mapping. Setting this to 0 will result in the UTF-8 still being validated.
-  '''DEFAULT: 0'''
+  DEFAULT: 0
 * path_decode_separators: Whether encoded path segment separators will be
   decoded.
- * 0 ('''DEFAULT''')
+ * 0 (DEFAULT)
  * 1
  * htpy.STATUS_404 (Expect a 404 on the response)
 * path_invalid_encoding_handling: Configures how server reacts to invalid
   encoding in path.
- * htpy.URL_DECODER_PRESERVE_PERCENT ('''DEFAULT''')
+ * htpy.URL_DECODER_PRESERVE_PERCENT (DEFAULT)
  * htpy.URL_DECODER_REMOVE_PERCENT
  * htpy.URL_DECODER_DECODE_INVALID
  * htpy.URL_DECODER_STATUS_400
@@ -289,12 +289,12 @@ Configuration objects contain the following attributes. In many cases the value 
   characters in path. This setting will not affect path normalization; it only
   controls what response status we expect for a request that contains invalid
   UTF-8 characters.
- * 0 ('''DEFAULT''')
+ * 0 (DEFAULT)
  * htpy.STATUS_400
 * path_nul_encoded_handling: Configures how server reacts to encoded NUL bytes.
   Some servers will terminate path at NUL, while some will respond with 400 or
   404. The default is to leave the NUL byte.
- * 0 ('''DEFAULT''')
+ * 0 (DEFAULT)
  * htpy.TERMINATE
  * htpy.STATUS_400
  * htpy.STATUS_404
@@ -322,16 +322,16 @@ Connection parser object
   this without altering the callback definition to account for the new object
   will cause htpy to raise an error when calling your callback.
 * del_obj(object): Stop passing ''object'' to each callback as the last
-  argument. '''XXX: Does it make sense to have this? Removing an object but
-  still using the callback definition that expects it will cause problems'''
+  argument. XXX: Does it make sense to have this? Removing an object but
+  still using the callback definition that expects it will cause problems
 * req_data(data): Send ''data'' into the parser. The data will be treated as a
   request. You do not have to send the entire request at once, you can send it
-  into the parser as you get it. '''XXX: Document return value'''
+  into the parser as you get it. XXX: Document return value
 * req_data_consumed(): Return the number of request bytes consumed by the
   parser.
 * res_data(data): Send ''data'' into the parser. The data will be treated as a
   response. You do not have to send the entire response at once, you can send
-  it into the parser as you get it. '''XXX: Document return value'''
+  it into the parser as you get it. XXX: Document return value
 * res_data_consumed(): Return the number of response bytes consumed by the
   parser.
 * get_last_error(): Return a dictionary of the last log message with level
@@ -343,8 +343,8 @@ Connection parser object
   'file': string,
   'line': int }
 </pre>
-* clear_error(): Clear the last saved error. '''XXX: Is this worth keeping? A
-  new error message will overwrite the old one.'''
+* clear_error(): Clear the last saved error. XXX: Is this worth keeping? A
+  new error message will overwrite the old one.
 * get_uri(): Return a dictionary of the parsed URI. Depending upon the
   normalization setting this dictionary can be the URI as it was parsed or as
   it was normalized. In the case of a normalized URI the missing parts wil be
