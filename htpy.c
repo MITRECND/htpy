@@ -27,10 +27,27 @@
 #include <structmember.h>
 #include "htp.h"
 
-#define HTPY_VERSION "0.4"
+#define HTPY_VERSION "0.5"
 
 static PyObject *htpy_error;
 static PyObject *htpy_stop;
+
+/*
+ * We set the python connection parser as user_data in the libhtp connection
+ * parser. Most callbacks are given a way to eventually get to the connection
+ * parser by doing something like this:
+ *
+ * PyObject *obj = (PyObject *) htp_connp_get_user_data(txd->tx->connp);
+ *
+ * We store the python objects for the callbacks in the connection parser
+ * object. Once we have the connection parser using the above snippet
+ * we can call the appropriate python function by using obj->foo_callback.
+ *
+ * The only callback that is not able to get to the connection parser is
+ * the request_file_data callback. Since we can't get to a connection
+ * parser from there we are storing the python object as a global.
+ */
+PyObject *request_file_data_callback;
 
 typedef struct {
 	PyObject_HEAD
@@ -393,6 +410,64 @@ int htpy_##CB##_callback(htp_tx_data_t *txd) { \
 CALLBACK_TX(request_body_data)
 CALLBACK_TX(response_body_data)
 
+int htpy_request_file_data_callback(htp_file_data_t *file_data) {
+	long i;
+	PyObject *res;
+	PyObject *arglist;
+	PyObject *data_key, *data_val;
+	PyObject *filename_key, *filename_val;
+	PyObject *tmpname_key, *tmpname_val;
+	PyObject *dict = PyDict_New();
+
+	if (!dict) {
+		PyErr_SetString(htpy_error, "Unable to create dictionary.");
+		return HOOK_ERROR;
+	}
+
+	data_key = Py_BuildValue("s", "data");
+	data_val = Py_BuildValue("s#", file_data->data, file_data->len);
+	if (!data_key || !data_val) {
+		Py_DECREF(dict);
+		return HOOK_ERROR;
+	}
+	if (PyDict_SetItem(dict, data_key, data_val) == -1) {
+		Py_DECREF(dict);
+		return HOOK_ERROR;
+	}
+
+	if (file_data->file->filename) {
+		filename_key = Py_BuildValue("s", "filename");
+		filename_val = Py_BuildValue("s#", bstr_ptr(file_data->file->filename), bstr_len(file_data->file->filename));
+		if (PyDict_SetItem(dict, filename_key, filename_val) == -1) {
+			Py_DECREF(dict);
+			return HOOK_ERROR;
+		}
+	}
+
+    if (file_data->file->tmpname) {
+		tmpname_key = Py_BuildValue("s", "tmpname");
+		tmpname_val = Py_BuildValue("s", file_data->file->tmpname);
+		if (PyDict_SetItem(dict, tmpname_key, tmpname_val) == -1) {
+			Py_DECREF(dict);
+			return HOOK_ERROR;
+		}
+	}
+
+	arglist = Py_BuildValue("(O)", dict);
+	if (!arglist)
+		return HOOK_ERROR;
+
+	res = PyObject_CallObject(request_file_data_callback, arglist);
+	Py_DECREF(arglist);
+	if (!res) {
+		PyErr_Print();
+		return HOOK_ERROR;
+	}
+	i = PyInt_AsLong(res);
+	Py_DECREF(res);
+	return((int) i);
+}
+
 int htpy_log_callback(htp_log_t *log) {
 	PyObject *obj = (PyObject *) htp_connp_get_user_data(log->connp);
 	PyObject *arglist = NULL;
@@ -451,6 +526,34 @@ REGISTER_CALLBACK(response_body_data)
 REGISTER_CALLBACK(response_trailer)
 REGISTER_CALLBACK(response)
 REGISTER_CALLBACK(log)
+
+static PyObject *htpy_connp_register_request_file_data(PyObject *self, PyObject *args) {
+	PyObject *res = NULL;
+	PyObject *temp;
+	int extract = 0;
+	if (PyArg_ParseTuple(args, "O|i:htpy_connp_register_request_file_data", &temp, &extract)) {
+		if (!PyCallable_Check(temp)) {
+			PyErr_SetString(PyExc_TypeError, "parameter must be callable");
+			return NULL;
+		}
+
+		Py_XINCREF(temp);
+		Py_XDECREF(request_file_data_callback);
+
+		request_file_data_callback = temp;
+
+		if (extract)
+			((htpy_connp *) self)->connp->cfg->extract_request_files = 1;
+
+		htp_config_register_multipart_parser(((htpy_connp *) self)->connp->cfg);
+
+		htp_config_register_request_file_data(((htpy_connp *) self)->connp->cfg, htpy_request_file_data_callback);
+
+		Py_INCREF(Py_None);
+		res = Py_None;
+	}
+	return res;
+}
 
 /* Return a header who'se key is the given string. */
 #define GET_HEADER(TYPE) \
@@ -762,6 +865,9 @@ static PyMethodDef htpy_connp_methods[] = {
 	{ "register_request_body_data", htpy_connp_register_request_body_data,
 	  METH_VARARGS,
 	  "Register a hook for whenever a piece of request body data is processed." },
+	{ "register_request_file_data", htpy_connp_register_request_file_data,
+	  METH_VARARGS,
+	  "Register a hook for whenever a full request body data is processed." },
 	{ "register_request_trailer", htpy_connp_register_request_trailer,
 	  METH_VARARGS,
 	  "Register a hook for right after headers have been parsed." },

@@ -54,7 +54,7 @@ EXTRA_OBJECTS = htpyMaker.extra_objects + EXTRA_OBJECTS
 
 setup (# Distribution meta-data
         name = "htpy",
-        version = "0.4",
+        version = "0.5",
         description = "python bindings for libhtp",
         author = "Wesley Shields",
         author_email = "wshields@mitre.org",

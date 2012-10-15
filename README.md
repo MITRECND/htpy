@@ -120,9 +120,14 @@ categories:
 * response_body_data: Called whenever response body data is available. Gzip
   compressed data should be properly decompressed.
 
+<b>Request File Data callback:</b>
+* request_file_data: Called whenever file data is found in a request.
+
 <b>Log callbacks:</b>
 * log: Called for every log message that should be handled.
 
+Registering callbacks
+---------------------
 Registering a callback is done with the appropriate method within the
 connection parser object. The method for any callback is the name of the
 callback pre-pended with "register_". For example, to register a response
@@ -135,6 +140,23 @@ def response_callback(cp):
 cp = htpy.init()
 cp.register_response(response_callback)
 </pre>
+
+All registrations take one parameter, the python function to call. The only
+exception to this rule is the request_file_data callback. This registration
+can take an optional second argument which is used to tell libhtp if it
+should write the file data to disk. For example:
+<pre>
+def file_data_callback(data):
+	print "INSIDE FILE DATA CALLBACK"
+	return htpy.HOOK_OK
+
+cp = htpy.init()
+cp.register_request_file_data(file_data_callback, True)
+</pre>
+
+The "True" above is the optional argument used to turn on file carving. If
+this argument is not provided then file carving will be left off (the
+default state).
 
 Callback definitions
 --------------------
@@ -187,9 +209,31 @@ def log_callback(cp, msg, level):
     return htpy.HOOK_OK
 </pre>
 
+###Request file data callback
+Request file data callbacks are passed one argument:
+
+* data: A dictionary which has the following key/value pairs:
+ * data: A blob of the data that has been parsed.
+ * filename: The filename parsed out of the data. This is an optional entry
+   in the dictionary. If libhtp can not find the filename then it will be
+   left out of the dictionary.
+ * tmpname: The filename on disk where the data is being written. This is an
+   optional entry in the dictionary. If libhtp is not carving the file then
+   it will be left out of the dictionary.
+<pre>
+def file_data_callback(data):
+	print "Wrote %i bytes to %s for %s" % (len(data['data']), data['tmpname'], data['filename'])
+	return htpy.HOOK_OK
+
+cp = htpy.init()
+cp.register_request_file_data(file_data_callback, True)
+</pre>
+
 Sending an object to callbacks
 ------------------------------
-It is possible to pass an arbitrary object to each callback. This object will be passed to each callback as the last argument. When using this the definition of each callback must take this into account:
+It is possible to pass an arbitrary object to each callback. This object
+will be passed to each callback as the last argument. When using this the
+definition of each callback must take this into account:
 
 <pre>
 x = "FOO"
@@ -209,6 +253,10 @@ cp.req_data(req)
 
 It is also possible to remove this object using the ''del_obj()'' method of the
 connection parser.
+
+###EXCEPTION
+The only callback which can not be passed an arbitrary object is the
+request_file_data callback. This is due to a limitation in libhtp.
 
 Sending data to the parser
 --------------------------
@@ -233,7 +281,9 @@ Configuration objects have no methods. All their functionality is exposed as
 attributes that can be manipulated.
 
 ###Attributes
-Configuration objects contain the following attributes. In many cases the value being set is not sanity checked. Using the wrong value can potentially alter the parser in odd ways.
+Configuration objects contain the following attributes. In many cases the
+value being set is not sanity checked. Using the wrong value can potentially
+alter the parser in odd ways.
 
 * log_level: Used when deciding whether to store or ignore the messages issued
   by the parser. If the level of a log message is less than the configuration
