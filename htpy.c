@@ -27,7 +27,7 @@
 #include <structmember.h>
 #include "htp.h"
 
-#define HTPY_VERSION "0.5"
+#define HTPY_VERSION "0.6"
 
 static PyObject *htpy_error;
 static PyObject *htpy_stop;
@@ -98,6 +98,7 @@ CONFIG_GET(path_invalid_utf8_handling)
 CONFIG_GET(path_nul_encoded_handling)
 CONFIG_GET(path_nul_raw_handling)
 CONFIG_GET(generate_request_uri_normalized)
+CONFIG_GET(tx_auto_destroy)
 
 #define CONFIG_SET(ATTR) \
 static int htpy_config_set_##ATTR(htpy_config *self, PyObject *value, void *closure) { \
@@ -126,6 +127,7 @@ CONFIG_SET(path_invalid_utf8_handling)
 CONFIG_SET(path_nul_encoded_handling)
 CONFIG_SET(path_nul_raw_handling)
 CONFIG_SET(generate_request_uri_normalized)
+CONFIG_SET(tx_auto_destroy)
 
 /*
  * Sadly the log level is not exposed like others. Only way to set it
@@ -227,6 +229,10 @@ static PyGetSetDef htpy_config_getseters[] = {
 	  (getter) htpy_config_get_generate_request_uri_normalized,
 	  (setter) htpy_config_set_generate_request_uri_normalized,
 	  "Generate a normalized URI", NULL },
+	{ "tx_auto_destroy",
+	  (getter) htpy_config_get_tx_auto_destroy,
+	  (setter) htpy_config_set_tx_auto_destroy,
+	  "Automatically destroy transactions", NULL },
 	{ NULL }
 };
 
@@ -565,7 +571,7 @@ static PyObject *htpy_connp_get_##TYPE##_header(PyObject *self, PyObject *args) 
 	char *p = NULL; \
 	if (!PyArg_ParseTuple(args, "S:htpy_connp_get_##TYPE##_header", &py_str)) \
 		return NULL; \
-	tx = list_get(((htpy_connp *) self)->connp->conn->transactions, 0); \
+	tx = list_get(((htpy_connp *) self)->connp->conn->transactions, list_size(((htpy_connp *) self)->connp->conn->transactions) - 1); \
 	if (!tx || !tx->TYPE##_headers) { \
 		PyErr_SetString(htpy_error, "Missing transaction or headers."); \
 		return NULL; \
@@ -596,7 +602,7 @@ static PyObject *htpy_connp_get_all_##TYPE##_headers(PyObject *self, PyObject *a
 		PyErr_SetString(htpy_error, "Unable to create return dictionary."); \
 		return NULL; \
 	} \
-	tx = list_get(((htpy_connp *) self)->connp->conn->transactions, 0); \
+	tx = list_get(((htpy_connp *) self)->connp->conn->transactions, list_size(((htpy_connp *) self)->connp->conn->transactions) - 1); \
 	if (!tx || !tx->TYPE##_headers) { \
 		PyErr_SetString(htpy_error, "Missing transaction or headers."); \
 		Py_DECREF(ret); \
@@ -629,7 +635,7 @@ static PyObject *htpy_connp_get_method(PyObject *self, PyObject *args) {
 	PyObject *ret;
 	htp_tx_t *tx = NULL;
 
-	tx = list_get(((htpy_connp *) self)->connp->conn->transactions, 0);
+	tx = list_get(((htpy_connp *) self)->connp->conn->transactions, list_size(((htpy_connp *) self)->connp->conn->transactions) - 1);
 	if (!tx || !tx->request_method) {
 		PyErr_SetString(htpy_error, "Missing transaction or request method.");
 		return NULL;
@@ -667,7 +673,7 @@ static PyObject *htpy_connp_get_response_status(PyObject *self, PyObject *args) 
 	PyObject *ret;
 	htp_tx_t *tx = NULL;
 
-	tx = list_get(((htpy_connp *) self)->connp->conn->transactions, 0);
+	tx = list_get(((htpy_connp *) self)->connp->conn->transactions, list_size(((htpy_connp *) self)->connp->conn->transactions) - 1);
 	if (!tx) {
 		PyErr_SetString(htpy_error, "Missing transaction.");
 		return NULL;
@@ -966,6 +972,7 @@ static PyObject *htpy_init(PyObject *self, PyObject *args) {
 	}
 
 	htpy_config_init((htpy_config *) cfg, NULL, NULL);
+	htp_config_set_tx_auto_destroy(((htpy_config *) cfg)->cfg, 1);
 
 	connp = htpy_connp_new(&htpy_connp_type, NULL, NULL);
 	if (!connp) {
