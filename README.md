@@ -355,6 +355,7 @@ alter the parser in odd ways.
  * htpy.STATUS_400
  * htpy.STATUS_404
 * generate_request_uri_normalized: Normalize the request URI. The default is 0.
+* tx_auto_destroy: Automatically destroy transactions when done.
 
 Connection parser object
 ------------------------
