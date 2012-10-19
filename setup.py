@@ -11,8 +11,8 @@ pathjoin = os.path.join
 # https://github.com/ironbee/libhtp at commit e5ea6e91ae. Their download
 # still labels it as 0.2.5?
 PKGVER   = '0.2.5'
-GITVER   = 'e5ea6e9'
-PKGNAME  = 'ironbee-libhtp-' + PKGVER + '-291-g' + GITVER
+GITVER   = 'c8871d5'
+PKGNAME  = 'ironbee-libhtp-' + PKGVER + '-299-g' + GITVER
 PKGTAR   = PKGNAME + '.tar.gz'
 BUILDDIR = 'ironbee-libhtp-' + GITVER
 
