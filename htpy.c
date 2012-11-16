@@ -70,6 +70,11 @@ static int htpy_config_init(htpy_config *self, PyObject *args, PyObject *kwds) {
 	return 0;
 }
 
+static void htpy_config_dealloc(htpy_config *self) {
+	htp_config_destroy(self->cfg);
+	self->ob_type->tp_free((PyObject *) self);
+}
+
 static PyMethodDef htpy_config_methods[] = {
 	{ NULL }
 };
@@ -242,44 +247,44 @@ static PyMemberDef htpy_config_members[] = {
 
 static PyTypeObject htpy_config_type = {
 	PyObject_HEAD_INIT(NULL)
-	0,                           /* ob_size */
-	"htpy.config",               /* tp_name */
-	sizeof(htpy_config),         /* tp_basicsize */
-	0,                           /* tp_itemsize */
-	0,                           /* tp_dealloc */
-	0,                           /* tp_print */
-	0,                           /* tp_getattr */
-	0,                           /* tp_setattr */
-	0,                           /* tp_compare */
-	0,                           /* tp_repr */
-	0,                           /* tp_as_number */
-	0,                           /* tp_as_sequence */
-	0,                           /* tp_as_mapping */
-	0,                           /* tp_hash */
-	0,                           /* tp_call */
-	0,                           /* tp_str */
-	0,                           /* tp_getattro */
-	0,                           /* tp_setattro */
-	0,                           /* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,          /* tp_flags */
-	"config object",             /* tp_doc */
-	0,                           /* tp_traverse */
-	0,                           /* tp_clear */
-	0,                           /* tp_richcompare */
-	0,                           /* tp_weaklistoffset */
-	0,                           /* tp_iter */
-	0,                           /* tp_iternext */
-	htpy_config_methods,         /* tp_methods */
-	htpy_config_members,         /* tp_members */
-	htpy_config_getseters,       /* tp_getset */
-	0,                           /* tp_base */
-	0,                           /* tp_dict */
-	0,                           /* tp_descr_get */
-	0,                           /* tp_descr_set */
-	0,                           /* tp_dictoffset */
-	(initproc) htpy_config_init, /* tp_init */
-	0,                           /* tp_alloc */
-	htpy_config_new,             /* tp_new */
+	0,                                /* ob_size */
+	"htpy.config",                    /* tp_name */
+	sizeof(htpy_config),              /* tp_basicsize */
+	0,                                /* tp_itemsize */
+	(destructor) htpy_config_dealloc, /* tp_dealloc */
+	0,                                /* tp_print */
+	0,                                /* tp_getattr */
+	0,                                /* tp_setattr */
+	0,                                /* tp_compare */
+	0,                                /* tp_repr */
+	0,                                /* tp_as_number */
+	0,                                /* tp_as_sequence */
+	0,                                /* tp_as_mapping */
+	0,                                /* tp_hash */
+	0,                                /* tp_call */
+	0,                                /* tp_str */
+	0,                                /* tp_getattro */
+	0,                                /* tp_setattro */
+	0,                                /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,               /* tp_flags */
+	"config object",                  /* tp_doc */
+	0,                                /* tp_traverse */
+	0,                                /* tp_clear */
+	0,                                /* tp_richcompare */
+	0,                                /* tp_weaklistoffset */
+	0,                                /* tp_iter */
+	0,                                /* tp_iternext */
+	htpy_config_methods,              /* tp_methods */
+	htpy_config_members,              /* tp_members */
+	htpy_config_getseters,            /* tp_getset */
+	0,                                /* tp_base */
+	0,                                /* tp_dict */
+	0,                                /* tp_descr_get */
+	0,                                /* tp_descr_set */
+	0,                                /* tp_dictoffset */
+	(initproc) htpy_config_init,      /* tp_init */
+	0,                                /* tp_alloc */
+	htpy_config_new,                  /* tp_new */
 };
 
 typedef struct {
@@ -311,11 +316,34 @@ static PyObject *htpy_connp_new(PyTypeObject *type, PyObject *args, PyObject *kw
 	return (PyObject *) self;
 }
 
+static void htpy_connp_dealloc(htpy_connp *self) {
+	/*
+	 * Decrement reference counters and free the underlying
+	 * libhtp backed storage.
+	 */
+	Py_XDECREF(self->obj_store);
+	Py_XDECREF(self->transaction_start_callback);
+	Py_XDECREF(self->request_line_callback);
+	Py_XDECREF(self->request_uri_normalize_callback);
+	Py_XDECREF(self->request_headers_callback);
+	Py_XDECREF(self->request_body_data_callback);
+	Py_XDECREF(self->request_trailer_callback);
+	Py_XDECREF(self->request_callback);
+	Py_XDECREF(self->response_start_callback);
+	Py_XDECREF(self->response_line_callback);
+	Py_XDECREF(self->response_headers_callback);
+	Py_XDECREF(self->response_body_data_callback);
+	Py_XDECREF(self->response_trailer_callback);
+	Py_XDECREF(self->response_callback);
+	Py_XDECREF(self->log_callback);
+	htp_connp_destroy_all(self->connp);
+	self->ob_type->tp_free((PyObject *) self);
+}
+
 static int htpy_connp_init(htpy_connp *self, PyObject *args, PyObject *kwds) {
 	PyObject *cfg_obj = NULL;
-	static char *kwlist[] =  { "config", NULL };
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:htpy_connp_init", kwlist, &cfg_obj))
+	if (!PyArg_ParseTuple(args, "O:htpy_connp_init", &cfg_obj))
 		return -1;
 
 	if (cfg_obj) {
@@ -325,17 +353,8 @@ static int htpy_connp_init(htpy_connp *self, PyObject *args, PyObject *kwds) {
 
 		htp_connp_set_user_data(((htpy_connp *) self)->connp, (void *) self);
 	}
-
-	return 0;
-}
-
-// Meant to be called internally only. Not to be exposed.
-static int htpy_connp_init_with_cfg(htpy_connp *self, PyObject *cfg_obj) {
-	if (!cfg_obj)
+	else
 		return -1;
-
-	self->connp = htp_connp_create_copycfg(((htpy_config *) cfg_obj)->cfg);
-	htp_connp_set_user_data(((htpy_connp *) self)->connp, (void *) self);
 
 	return 0;
 }
@@ -368,10 +387,8 @@ int htpy_##CB##_callback(htp_connp_t *connp) { \
 		return HOOK_ERROR; \
 	res = PyObject_CallObject(((htpy_connp *) obj)->CB##_callback, arglist); \
 	Py_DECREF(arglist); \
-	if (!res) { \
-		PyErr_Print(); \
+	if (!res) \
 		return HOOK_ERROR; \
-	} \
 	i = PyInt_AsLong(res); \
 	Py_DECREF(res); \
 	return((int) i); \
@@ -404,10 +421,8 @@ int htpy_##CB##_callback(htp_tx_data_t *txd) { \
 		return HOOK_ERROR; \
 	res = PyObject_CallObject(((htpy_connp *) obj)->CB##_callback, arglist); \
 	Py_DECREF(arglist); \
-	if (!res) { \
-		PyErr_Print(); \
+	if (!res) \
 		return HOOK_ERROR; \
-	} \
 	i = PyInt_AsLong(res); \
 	Py_DECREF(res); \
 	return((int) i); \
@@ -465,10 +480,8 @@ int htpy_request_file_data_callback(htp_file_data_t *file_data) {
 
 	res = PyObject_CallObject(request_file_data_callback, arglist);
 	Py_DECREF(arglist);
-	if (!res) {
-		PyErr_Print();
+	if (!res)
 		return HOOK_ERROR;
-	}
 	i = PyInt_AsLong(res);
 	Py_DECREF(res);
 	return((int) i);
@@ -486,13 +499,11 @@ int htpy_log_callback(htp_log_t *log) {
 		arglist = Py_BuildValue("(Osi)", (htpy_connp *) obj, log->msg, log->level);
 	if (!arglist)
 		return HOOK_ERROR;
+
 	res = PyObject_CallObject(((htpy_connp *) obj)->log_callback, arglist);
 	Py_DECREF(arglist);
-	if (!res) {
-		PyErr_Print();
+	if (!res)
 		return HOOK_ERROR;
-	}
-
 	i = PyInt_AsLong(res);
 	Py_DECREF(res);
 	return((int) i);
@@ -649,8 +660,8 @@ static PyObject *htpy_connp_get_method(PyObject *self, PyObject *args) {
 static PyObject *htpy_connp_set_obj(PyObject *self, PyObject *args) {
 	PyObject *obj;
 
-	if (!PyArg_ParseTuple(args, "O:htpy_connp_set_obj", &obj)) \
-		return NULL; \
+	if (!PyArg_ParseTuple(args, "O:htpy_connp_set_obj", &obj))
+		return NULL;
 
 	Py_XINCREF(obj);
 	((htpy_connp *) self)->obj_store = obj;
@@ -870,10 +881,10 @@ static PyMethodDef htpy_connp_methods[] = {
 	  "Register a hook for right after headers have been parsed and sanity checked." },
 	{ "register_request_body_data", htpy_connp_register_request_body_data,
 	  METH_VARARGS,
-	  "Register a hook for whenever a piece of request body data is processed." },
+	  "Register a hook for when a piece of request body data is processed." },
 	{ "register_request_file_data", htpy_connp_register_request_file_data,
 	  METH_VARARGS,
-	  "Register a hook for whenever a full request body data is processed." },
+	  "Register a hook for when a full request body data is processed." },
 	{ "register_request_trailer", htpy_connp_register_request_trailer,
 	  METH_VARARGS,
 	  "Register a hook for right after headers have been parsed." },
@@ -889,7 +900,7 @@ static PyMethodDef htpy_connp_methods[] = {
 	  METH_VARARGS, "Register a hook for right after headers have been parsed and sanity checked." },
 	{ "register_response_body_data", htpy_connp_register_response_body_data,
 	  METH_VARARGS,
-	  "Register a hook for whenever a piece of response body data is processed. Chunked and gzip'ed data are handled." },
+	  "Register a hook for when a piece of response body data is processed. Chunked and gzip'ed data are handled." },
 	{ "register_response_trailer", htpy_connp_register_response_trailer,
 	  METH_VARARGS,
 	  "Register a hook for right after headers have been parsed." },
@@ -920,70 +931,83 @@ static PyMethodDef htpy_connp_methods[] = {
 
 static PyTypeObject htpy_connp_type = {
 	PyObject_HEAD_INIT(NULL)
-	0,                          /* ob_size */
-	"htpy.connp",               /* tp_name */
-	sizeof(htpy_connp),         /* tp_basicsize */
-	0,                          /* tp_itemsize */
-	0,                          /* tp_dealloc */
-	0,                          /* tp_print */
-	0,                          /* tp_getattr */
-	0,                          /* tp_setattr */
-	0,                          /* tp_compare */
-	0,                          /* tp_repr */
-	0,                          /* tp_as_number */
-	0,                          /* tp_as_sequence */
-	0,                          /* tp_as_mapping */
-	0,                          /* tp_hash */
-	0,                          /* tp_call */
-	0,                          /* tp_str */
-	0,                          /* tp_getattro */
-	0,                          /* tp_setattro */
-	0,                          /* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,         /* tp_flags */
-	"connp object",             /* tp_doc */
-	0,                          /* tp_traverse */
-	0,                          /* tp_clear */
-	0,                          /* tp_richcompare */
-	0,                          /* tp_weaklistoffset */
-	0,                          /* tp_iter */
-	0,                          /* tp_iternext */
-	htpy_connp_methods,         /* tp_methods */
-	0,                          /* tp_members */
-	0,                          /* tp_getset */
-	0,                          /* tp_base */
-	0,                          /* tp_dict */
-	0,                          /* tp_descr_get */
-	0,                          /* tp_descr_set */
-	0,                          /* tp_dictoffset */
-	(initproc) htpy_connp_init, /* tp_init */
-	0,                          /* tp_alloc */
-	htpy_connp_new,             /* tp_new */
+	0,                               /* ob_size */
+	"htpy.connp",                    /* tp_name */
+	sizeof(htpy_connp),              /* tp_basicsize */
+	0,                               /* tp_itemsize */
+	(destructor) htpy_connp_dealloc, /* tp_dealloc */
+	0,                               /* tp_print */
+	0,                               /* tp_getattr */
+	0,                               /* tp_setattr */
+	0,                               /* tp_compare */
+	0,                               /* tp_repr */
+	0,                               /* tp_as_number */
+	0,                               /* tp_as_sequence */
+	0,                               /* tp_as_mapping */
+	0,                               /* tp_hash */
+	0,                               /* tp_call */
+	0,                               /* tp_str */
+	0,                               /* tp_getattro */
+	0,                               /* tp_setattro */
+	0,                               /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,              /* tp_flags */
+	"connp object",                  /* tp_doc */
+	0,                               /* tp_traverse */
+	0,                               /* tp_clear */
+	0,                               /* tp_richcompare */
+	0,                               /* tp_weaklistoffset */
+	0,                               /* tp_iter */
+	0,                               /* tp_iternext */
+	htpy_connp_methods,              /* tp_methods */
+	0,                               /* tp_members */
+	0,                               /* tp_getset */
+	0,                               /* tp_base */
+	0,                               /* tp_dict */
+	0,                               /* tp_descr_get */
+	0,                               /* tp_descr_set */
+	0,                               /* tp_dictoffset */
+	(initproc) htpy_connp_init,      /* tp_init */
+	0,                               /* tp_alloc */
+	htpy_connp_new,                  /* tp_new */
 };
 
 static PyObject *htpy_init(PyObject *self, PyObject *args) {
-	PyObject *ret;
 	PyObject *cfg;
 	PyObject *connp;
+	PyObject *tuple;
 
 	cfg = htpy_config_new(&htpy_config_type, NULL, NULL);
 	if (!cfg) {
-		PyErr_SetString(htpy_error, "Unable to make new config."); \
+		PyErr_SetString(htpy_error, "Unable to make new config.");
 		return NULL;
 	}
 
-	htpy_config_init((htpy_config *) cfg, NULL, NULL);
+	if (htpy_config_init((htpy_config *) cfg, NULL, NULL) == -1) {
+		PyErr_SetString(htpy_error, "Unable to init new config.");
+		Py_DECREF(cfg);
+		return NULL;
+	}
+
 	htp_config_set_tx_auto_destroy(((htpy_config *) cfg)->cfg, 1);
 
 	connp = htpy_connp_new(&htpy_connp_type, NULL, NULL);
 	if (!connp) {
-		Py_DECREF(cfg); \
+		PyErr_SetString(htpy_error, "Unable to make new connection parser.");
+		Py_DECREF(cfg);
 		return NULL;
 	}
 
-	htpy_connp_init_with_cfg((htpy_connp *) connp, cfg);
+	/* Pass the config in as a tuple. New style arguments! */
+	tuple = Py_BuildValue("(O)", cfg);
+	if (htpy_connp_init((htpy_connp *) connp, tuple, NULL) == -1) {
+		PyErr_SetString(htpy_error, "Unable to init new connection parser.");
+		Py_DECREF(cfg);
+		return NULL;
+	}
+	Py_DECREF(tuple);
+	Py_DECREF(cfg);
 
-	ret = Py_BuildValue("O", connp);
-	return(ret);
+	return(connp);
 }
 
 static PyMethodDef htpy_methods[] = {
