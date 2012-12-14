@@ -29,6 +29,29 @@
 
 #define HTPY_VERSION "0.7"
 
+/*
+ * Compatability shims.
+ * libhtp stopped using HOOK_ constants, but there is existing code
+ * using htpy that uses the deprecated constants. Support them for the
+ * foreseable future. All new code should not use these as they will
+ * be removed at some point in the future.
+ */
+#ifndef HOOK_STOP
+#define HOOK_STOP HTP_STOP
+#endif
+
+#ifndef HOOK_ERROR
+#define HOOK_ERROR HTP_ERROR
+#endif
+
+#ifndef HOOK_OK
+#define HOOK_OK HTP_OK
+#endif
+
+#ifndef HOOK_DECLINED
+#define HOOK_DECLINED HTP_DECLINED
+#endif
+
 static PyObject *htpy_error;
 static PyObject *htpy_stop;
 
@@ -298,13 +321,13 @@ typedef struct {
 	PyObject *request_headers_callback;
 	PyObject *request_body_data_callback;
 	PyObject *request_trailer_callback;
-	PyObject *request_callback;
+	PyObject *request_done_callback;
 	PyObject *response_start_callback;
 	PyObject *response_line_callback;
 	PyObject *response_headers_callback;
 	PyObject *response_body_data_callback;
 	PyObject *response_trailer_callback;
-	PyObject *response_callback;
+	PyObject *response_done_callback;
 	PyObject *log_callback;
 } htpy_connp;
 
@@ -328,13 +351,13 @@ static void htpy_connp_dealloc(htpy_connp *self) {
 	Py_XDECREF(self->request_headers_callback);
 	Py_XDECREF(self->request_body_data_callback);
 	Py_XDECREF(self->request_trailer_callback);
-	Py_XDECREF(self->request_callback);
+	Py_XDECREF(self->request_done_callback);
 	Py_XDECREF(self->response_start_callback);
 	Py_XDECREF(self->response_line_callback);
 	Py_XDECREF(self->response_headers_callback);
 	Py_XDECREF(self->response_body_data_callback);
 	Py_XDECREF(self->response_trailer_callback);
-	Py_XDECREF(self->response_callback);
+	Py_XDECREF(self->response_done_callback);
 	Py_XDECREF(self->log_callback);
 	htp_connp_destroy_all(self->connp);
 	self->ob_type->tp_free((PyObject *) self);
@@ -399,12 +422,12 @@ CALLBACK(request_line)
 CALLBACK(request_uri_normalize)
 CALLBACK(request_headers)
 CALLBACK(request_trailer)
-CALLBACK(request)
+CALLBACK(request_done)
 CALLBACK(response_start)
 CALLBACK(response_line)
 CALLBACK(response_headers)
 CALLBACK(response_trailer)
-CALLBACK(response)
+CALLBACK(response_done)
 
 /* These callbacks take a htp_tx_data_t pointer. */
 #define CALLBACK_TX(CB) \
@@ -535,13 +558,13 @@ REGISTER_CALLBACK(request_uri_normalize)
 REGISTER_CALLBACK(request_headers)
 REGISTER_CALLBACK(request_body_data)
 REGISTER_CALLBACK(request_trailer)
-REGISTER_CALLBACK(request)
+REGISTER_CALLBACK(request_done)
 REGISTER_CALLBACK(response_start)
 REGISTER_CALLBACK(response_line)
 REGISTER_CALLBACK(response_headers)
 REGISTER_CALLBACK(response_body_data)
 REGISTER_CALLBACK(response_trailer)
-REGISTER_CALLBACK(response)
+REGISTER_CALLBACK(response_done)
 REGISTER_CALLBACK(log)
 
 static PyObject *htpy_connp_register_request_file_data(PyObject *self, PyObject *args) {
@@ -582,7 +605,7 @@ static PyObject *htpy_connp_get_##TYPE##_header(PyObject *self, PyObject *args) 
 	char *p = NULL; \
 	if (!PyArg_ParseTuple(args, "S:htpy_connp_get_##TYPE##_header", &py_str)) \
 		return NULL; \
-	tx = list_get(((htpy_connp *) self)->connp->conn->transactions, list_size(((htpy_connp *) self)->connp->conn->transactions) - 1); \
+	tx = htp_list_get(((htpy_connp *) self)->connp->conn->transactions, htp_list_size(((htpy_connp *) self)->connp->conn->transactions) - 1); \
 	if (!tx || !tx->TYPE##_headers) { \
 		PyErr_SetString(htpy_error, "Missing transaction or headers."); \
 		return NULL; \
@@ -590,7 +613,7 @@ static PyObject *htpy_connp_get_##TYPE##_header(PyObject *self, PyObject *args) 
 	p = PyString_AsString(py_str); \
 	if (!p) \
 		return NULL; \
-	hdr = table_get_c(tx->TYPE##_headers, p); \
+	hdr = htp_table_get_c(tx->TYPE##_headers, p); \
 	if (!hdr) \
 		Py_RETURN_NONE; \
 	ret = Py_BuildValue("s#", bstr_ptr(hdr->value), bstr_len(hdr->value)); \
@@ -605,7 +628,9 @@ GET_HEADER(response)
 /* Return a dictionary of all request or response headers. */
 #define GET_ALL_HEADERS(TYPE) \
 static PyObject *htpy_connp_get_all_##TYPE##_headers(PyObject *self, PyObject *args) { \
-	htp_header_t *hdr; \
+	int i; \
+	size_t n; \
+	htp_header_t *hdr = NULL; \
 	PyObject *key, *val; \
 	htp_tx_t *tx = NULL; \
 	PyObject *ret = PyDict_New(); \
@@ -613,14 +638,14 @@ static PyObject *htpy_connp_get_all_##TYPE##_headers(PyObject *self, PyObject *a
 		PyErr_SetString(htpy_error, "Unable to create return dictionary."); \
 		return NULL; \
 	} \
-	tx = list_get(((htpy_connp *) self)->connp->conn->transactions, list_size(((htpy_connp *) self)->connp->conn->transactions) - 1); \
+	tx = htp_list_get(((htpy_connp *) self)->connp->conn->transactions, htp_list_size(((htpy_connp *) self)->connp->conn->transactions) - 1); \
 	if (!tx || !tx->TYPE##_headers) { \
 		PyErr_SetString(htpy_error, "Missing transaction or headers."); \
 		Py_DECREF(ret); \
 		return NULL; \
 	} \
-	table_iterator_reset(tx->TYPE##_headers); \
-	while ((table_iterator_next(tx->TYPE##_headers, (void **) &hdr)) != NULL) {\
+	for (i = 0, n = htp_table_size(tx->TYPE##_headers); i < n; i++) { \
+		htp_table_get_index(tx->TYPE##_headers, i, NULL, (void **)&hdr); \
 		key = Py_BuildValue("s#", bstr_ptr(hdr->name), bstr_len(hdr->name)); \
 		val = Py_BuildValue("s#", bstr_ptr(hdr->value), bstr_len(hdr->value)); \
 		if (!key || !val) { \
@@ -646,7 +671,7 @@ static PyObject *htpy_connp_get_method(PyObject *self, PyObject *args) {
 	PyObject *ret;
 	htp_tx_t *tx = NULL;
 
-	tx = list_get(((htpy_connp *) self)->connp->conn->transactions, list_size(((htpy_connp *) self)->connp->conn->transactions) - 1);
+	tx = htp_list_get(((htpy_connp *) self)->connp->conn->transactions, htp_list_size(((htpy_connp *) self)->connp->conn->transactions) - 1);
 	if (!tx || !tx->request_method) {
 		PyErr_SetString(htpy_error, "Missing transaction or request method.");
 		return NULL;
@@ -691,7 +716,7 @@ static PyObject *htpy_connp_get_response_status(PyObject *self, PyObject *args) 
 	PyObject *ret;
 	htp_tx_t *tx = NULL;
 
-	tx = list_get(((htpy_connp *) self)->connp->conn->transactions, list_size(((htpy_connp *) self)->connp->conn->transactions) - 1);
+	tx = htp_list_get(((htpy_connp *) self)->connp->conn->transactions, htp_list_size(((htpy_connp *) self)->connp->conn->transactions) - 1);
 	if (!tx) {
 		PyErr_SetString(htpy_error, "Missing transaction.");
 		return NULL;
@@ -895,7 +920,10 @@ static PyMethodDef htpy_connp_methods[] = {
 	{ "register_request_trailer", htpy_connp_register_request_trailer,
 	  METH_VARARGS,
 	  "Register a hook for right after headers have been parsed." },
-	{ "register_request", htpy_connp_register_request, METH_VARARGS,
+	/* This one is deprecated. */
+	{ "register_request", htpy_connp_register_request_done, METH_VARARGS,
+	  "DEPRECATED: Register a callback for when the entire request is parsed." },
+	{ "register_request_done", htpy_connp_register_request_done, METH_VARARGS,
 	  "Register a callback for when the entire request is parsed." },
 	{ "register_response_start", htpy_connp_register_response_start,
 	  METH_VARARGS,
@@ -911,7 +939,10 @@ static PyMethodDef htpy_connp_methods[] = {
 	{ "register_response_trailer", htpy_connp_register_response_trailer,
 	  METH_VARARGS,
 	  "Register a hook for right after headers have been parsed." },
-	{ "register_response", htpy_connp_register_response, METH_VARARGS,
+	/* This one is deprecated. */
+	{ "register_response", htpy_connp_register_response_done, METH_VARARGS,
+	  "DEPRECATED: Register a hook for right after an entire response has been parsed." },
+	{ "register_response_done", htpy_connp_register_response_done, METH_VARARGS,
 	  "Register a hook for right after an entire response has been parsed." },
 	{ "register_log", htpy_connp_register_log, METH_VARARGS,
 	  "Register a callback for when a log message is generated." },
@@ -1051,11 +1082,12 @@ PyMODINIT_FUNC inithtpy(void) {
 
 	PyModule_AddIntMacro(m, HTP_ERROR);
 	PyModule_AddIntMacro(m, HTP_OK);
+	PyModule_AddIntMacro(m, HTP_STOP);
 	PyModule_AddIntMacro(m, HTP_DATA);
 	PyModule_AddIntMacro(m, HTP_DATA_OTHER);
 	PyModule_AddIntMacro(m, HTP_DECLINED);
 
-	PyModule_AddIntMacro(m, PROTOCOL_UNKNOWN);
+	PyModule_AddIntMacro(m, HTP_PROTOCOL_UNKNOWN);
 	PyModule_AddIntMacro(m, HTTP_0_9);
 	PyModule_AddIntMacro(m, HTTP_1_0);
 	PyModule_AddIntMacro(m, HTTP_1_1);
@@ -1071,6 +1103,10 @@ PyMODINIT_FUNC inithtpy(void) {
 	PyModule_AddIntMacro(m, HTP_LOG_DEBUG);
 	PyModule_AddIntMacro(m, HTP_LOG_DEBUG2);
 
+	/*
+	 * These are deprecated by libhtp.
+	 * You should be using the HTP_ equivalents.
+	 */
 	PyModule_AddIntMacro(m, HOOK_ERROR);
 	PyModule_AddIntMacro(m, HOOK_OK);
 	PyModule_AddIntMacro(m, HOOK_DECLINED);

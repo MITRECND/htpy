@@ -7,14 +7,10 @@ import os, os.path
 
 pathjoin = os.path.join
 
-# Despite 0.2.5, this is a tarball from the master branch of
-# https://github.com/ironbee/libhtp at commit e5ea6e91ae. Their download
-# still labels it as 0.2.5?
-PKGVER   = '0.2.5'
-GITVER   = 'c8871d5'
-PKGNAME  = 'ironbee-libhtp-' + PKGVER + '-299-g' + GITVER
+GITVER   = '35492a2cdcab48e0ef563ccc2b8776dc85879d43'
+PKGNAME  = 'libhtp-' + GITVER
 PKGTAR   = PKGNAME + '.tar.gz'
-BUILDDIR = 'ironbee-libhtp-' + GITVER
+BUILDDIR = 'libhtp-' + GITVER
 
 INCLUDE_DIRS  = ['/usr/local/include', '/opt/local/include', '/usr/include']
 LIBRARY_DIRS  = ['/usr/lib', '/usr/local/lib']
