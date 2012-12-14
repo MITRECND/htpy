@@ -663,6 +663,13 @@ static PyObject *htpy_connp_set_obj(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "O:htpy_connp_set_obj", &obj))
 		return NULL;
 
+	/*
+	 * Remove a reference to any existing object. This ensures we
+	 * do not leak objects in the case of someone calling this
+	 * multiple times.
+	 */
+	Py_XDECREF(((htpy_connp *) self)->obj_store);
+
 	Py_XINCREF(obj);
 	((htpy_connp *) self)->obj_store = obj;
 
