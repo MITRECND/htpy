@@ -24,13 +24,13 @@ def uri_callback(cp):
     uri = cp.get_uri()
     if path in uri:
         print uri['path']
-    return htpy.HOOK_OK
+    return htpy.HTP_OK
 
 def request_headers_callback(cp):
     host = cp.get_request_header('Host')
     if host:
         print host
-    return htpy.HOOK_OK
+    return htpy.HTP_OK
 
 cp = htpy.init()
 cp.register_request_uri_normalize(uri_callback)
@@ -72,16 +72,16 @@ will be called.
 Return values
 -------------
 Callback functions must return one of the following values.
-* htpy.HOOK_OK
-* htpy.HOOK_ERROR
-* htpy.HOOK_STOP
-* htpy.HOOK_DECLINE (XXX: What does this do?)
+* htpy.HTP_OK
+* htpy.HTP_ERROR
+* htpy.HTP_STOP
+* htpy.HTP_DECLINE (XXX: What does this do?)
 
-###HOOK_STOP vs HOOK_ERROR
-When libhtp is given the HOOK_ERROR return value it sets the parser state to an
+###HTP_STOP vs HTP_ERROR
+When libhtp is given the HTP_ERROR return value it sets the parser state to an
 error and will refuse to parse any further. This manifests in htpy as an
 htpy_error exception. This is considered a fatal error. The difference between
-HOOK_STOP and HOOK_ERROR is that HOOK_STOP will raise a htpy_stop exception,
+HTP_STOP and HTP_ERROR is that HTP_STOP will raise a htpy_stop exception,
 which should be caught in handleStream() and tcp.stop() should be called when
 the exception is caught. The reason you can not call tcp.stop() from a callback
 is that the tcp object passed into handleStream() is created on the fly each
@@ -135,7 +135,7 @@ callback:
 <pre>
 def response_callback(cp):
     print "INSIDE RESPONSE CALLBACK"
-    return htpy.HOOK_OK
+    return htpy.HTP_OK
 
 cp = htpy.init()
 cp.register_response(response_callback)
@@ -148,7 +148,7 @@ should write the file data to disk. For example:
 <pre>
 def file_data_callback(data):
 	print "INSIDE FILE DATA CALLBACK"
-	return htpy.HOOK_OK
+	return htpy.HTP_OK
 
 cp = htpy.init()
 cp.register_request_file_data(file_data_callback, True)
@@ -170,7 +170,7 @@ def request_uri_normalize_callback(cp):
     uri = cp.get_uri()
     if query in uri:
         print uri['query']
-    return htpy.HOOK_OK
+    return htpy.HTP_OK
 </pre>
 
 ###Transaction callbacks
@@ -182,7 +182,7 @@ Transaction callbacks are passed two arguments:
 <pre>
 def response_body_data_callback(data, length):
     print "Got %i bytes: %s" % (length, data)
-    return htpy.HOOK_OK
+    return htpy.HTP_OK
 </pre>
 
 ###Log callback
@@ -202,11 +202,11 @@ def log_callback(cp, msg, level):
     if level == htpy.HTP_LOG_ERROR:
         elog = cp.get_last_error()
         if elog == None:
-            return htpy.HOOK_ERROR
+            return htpy.HTP_ERROR
         print "%s:%i - %s (%i)" % (elog['file'], elog['line'], elog['msg'], elog['level'])
     else:
         print "%i - %s" % (level, msg)
-    return htpy.HOOK_OK
+    return htpy.HTP_OK
 </pre>
 
 ###Request file data callback
@@ -223,7 +223,7 @@ Request file data callbacks are passed one argument:
 <pre>
 def file_data_callback(data):
 	print "Wrote %i bytes to %s for %s" % (len(data['data']), data['tmpname'], data['filename'])
-	return htpy.HOOK_OK
+	return htpy.HTP_OK
 
 cp = htpy.init()
 cp.register_request_file_data(file_data_callback, True)
@@ -243,7 +243,7 @@ def request_uri_normalize_callback(cp, obj):
     if query in uri:
         print uri['query']
     print obj
-    return htpy.HOOK_OK
+    return htpy.HTP_OK
 
 cp = htpy.init()
 cp.set_obj(x)
@@ -421,13 +421,15 @@ When the callbacks are called are documented elsewhere.
 * register_request_headers(callback)
 * register_request_body_data(callback)
 * register_request_trailer(callback)
-* register_request(callback)
+* register_request(callback) # DEPRECATED, will be removed soon.
+* register_request_done(callback)
 * register_response_start(callback)
 * register_response_line(callback)
 * register_response_headers(callback)
 * register_response_body_data(callback)
 * register_response_trailer(callback)
-* register_response(callback)
+* register_response(callback) # DEPRECATED, will be removed soon.
+* register_response_done(callback)
 * register_log(callback)
 
 ###Attributes
