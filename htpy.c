@@ -407,11 +407,11 @@ int htpy_##CB##_callback(htp_connp_t *connp) { \
 	else \
 		arglist = Py_BuildValue("(O)", obj); \
 	if (!arglist) \
-		return HOOK_ERROR; \
+		return HTP_ERROR; \
 	res = PyObject_CallObject(((htpy_connp *) obj)->CB##_callback, arglist); \
 	Py_DECREF(arglist); \
 	if (!res) \
-		return HOOK_ERROR; \
+		return HTP_ERROR; \
 	i = PyInt_AsLong(res); \
 	Py_DECREF(res); \
 	return((int) i); \
@@ -441,11 +441,11 @@ int htpy_##CB##_callback(htp_tx_data_t *txd) { \
 	else \
 		arglist = Py_BuildValue("(s#I)", txd->data, txd->len, txd->len); \
 	if (!arglist) \
-		return HOOK_ERROR; \
+		return HTP_ERROR; \
 	res = PyObject_CallObject(((htpy_connp *) obj)->CB##_callback, arglist); \
 	Py_DECREF(arglist); \
 	if (!res) \
-		return HOOK_ERROR; \
+		return HTP_ERROR; \
 	i = PyInt_AsLong(res); \
 	Py_DECREF(res); \
 	return((int) i); \
@@ -465,18 +465,18 @@ int htpy_request_file_data_callback(htp_file_data_t *file_data) {
 
 	if (!dict) {
 		PyErr_SetString(htpy_error, "Unable to create dictionary.");
-		return HOOK_ERROR;
+		return HTP_ERROR;
 	}
 
 	data_key = Py_BuildValue("s", "data");
 	data_val = Py_BuildValue("s#", file_data->data, file_data->len);
 	if (!data_key || !data_val) {
 		Py_DECREF(dict);
-		return HOOK_ERROR;
+		return HTP_ERROR;
 	}
 	if (PyDict_SetItem(dict, data_key, data_val) == -1) {
 		Py_DECREF(dict);
-		return HOOK_ERROR;
+		return HTP_ERROR;
 	}
 
 	if (file_data->file->filename) {
@@ -484,7 +484,7 @@ int htpy_request_file_data_callback(htp_file_data_t *file_data) {
 		filename_val = Py_BuildValue("s#", bstr_ptr(file_data->file->filename), bstr_len(file_data->file->filename));
 		if (PyDict_SetItem(dict, filename_key, filename_val) == -1) {
 			Py_DECREF(dict);
-			return HOOK_ERROR;
+			return HTP_ERROR;
 		}
 	}
 
@@ -493,18 +493,18 @@ int htpy_request_file_data_callback(htp_file_data_t *file_data) {
 		tmpname_val = Py_BuildValue("s", file_data->file->tmpname);
 		if (PyDict_SetItem(dict, tmpname_key, tmpname_val) == -1) {
 			Py_DECREF(dict);
-			return HOOK_ERROR;
+			return HTP_ERROR;
 		}
 	}
 
 	arglist = Py_BuildValue("(O)", dict);
 	if (!arglist)
-		return HOOK_ERROR;
+		return HTP_ERROR;
 
 	res = PyObject_CallObject(request_file_data_callback, arglist);
 	Py_DECREF(arglist);
 	if (!res)
-		return HOOK_ERROR;
+		return HTP_ERROR;
 	i = PyInt_AsLong(res);
 	Py_DECREF(res);
 	return((int) i);
@@ -521,12 +521,12 @@ int htpy_log_callback(htp_log_t *log) {
 	else
 		arglist = Py_BuildValue("(Osi)", (htpy_connp *) obj, log->msg, log->level);
 	if (!arglist)
-		return HOOK_ERROR;
+		return HTP_ERROR;
 
 	res = PyObject_CallObject(((htpy_connp *) obj)->log_callback, arglist);
 	Py_DECREF(arglist);
 	if (!res)
-		return HOOK_ERROR;
+		return HTP_ERROR;
 	i = PyInt_AsLong(res);
 	Py_DECREF(res);
 	return((int) i);
