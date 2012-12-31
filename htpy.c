@@ -410,8 +410,10 @@ int htpy_##CB##_callback(htp_connp_t *connp) { \
 		return HTP_ERROR; \
 	res = PyObject_CallObject(((htpy_connp *) obj)->CB##_callback, arglist); \
 	Py_DECREF(arglist); \
-	if (!res) \
+	if (PyErr_Occurred() != NULL) { \
+		PyErr_PrintEx(0); \
 		return HTP_ERROR; \
+	} \
 	i = PyInt_AsLong(res); \
 	Py_DECREF(res); \
 	return((int) i); \
@@ -444,8 +446,10 @@ int htpy_##CB##_callback(htp_tx_data_t *txd) { \
 		return HTP_ERROR; \
 	res = PyObject_CallObject(((htpy_connp *) obj)->CB##_callback, arglist); \
 	Py_DECREF(arglist); \
-	if (!res) \
+	if (PyErr_Occurred() != NULL) { \
+		PyErr_PrintEx(0); \
 		return HTP_ERROR; \
+	} \
 	i = PyInt_AsLong(res); \
 	Py_DECREF(res); \
 	return((int) i); \
@@ -503,8 +507,10 @@ int htpy_request_file_data_callback(htp_file_data_t *file_data) {
 
 	res = PyObject_CallObject(request_file_data_callback, arglist);
 	Py_DECREF(arglist);
-	if (!res)
+	if (PyErr_Occurred() != NULL) {
+		PyErr_PrintEx(0);
 		return HTP_ERROR;
+	}
 	i = PyInt_AsLong(res);
 	Py_DECREF(res);
 	return((int) i);
@@ -525,8 +531,10 @@ int htpy_log_callback(htp_log_t *log) {
 
 	res = PyObject_CallObject(((htpy_connp *) obj)->log_callback, arglist);
 	Py_DECREF(arglist);
-	if (!res)
+	if (PyErr_Occurred() != NULL) {
+		PyErr_PrintEx(0);
 		return HTP_ERROR;
+	}
 	i = PyInt_AsLong(res);
 	Py_DECREF(res);
 	return((int) i);
