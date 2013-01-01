@@ -22,7 +22,7 @@ import htpy
 
 def uri_callback(cp):
     uri = cp.get_uri()
-    if path in uri:
+    if 'path' in uri:
         print uri['path']
     return htpy.HTP_OK
 
