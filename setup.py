@@ -7,7 +7,7 @@ import os, os.path
 
 pathjoin = os.path.join
 
-GITVER   = '35492a2cdcab48e0ef563ccc2b8776dc85879d43'
+GITVER   = 'de1e696cdb544349a334f9102c0a13a15c8f3549'
 PKGNAME  = 'libhtp-' + GITVER
 PKGTAR   = PKGNAME + '.tar.gz'
 BUILDDIR = 'libhtp-' + GITVER

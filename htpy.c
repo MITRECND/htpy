@@ -114,17 +114,6 @@ static PyObject *htpy_config_get_##ATTR(htpy_config *self, void *closure) { \
 }
 
 CONFIG_GET(log_level)
-CONFIG_GET(spersonality)
-CONFIG_GET(path_case_insensitive)
-CONFIG_GET(path_compress_separators)
-CONFIG_GET(path_backslash_separators)
-CONFIG_GET(path_control_char_handling)
-CONFIG_GET(path_convert_utf8)
-CONFIG_GET(path_decode_separators)
-CONFIG_GET(path_invalid_encoding_handling)
-CONFIG_GET(path_invalid_utf8_handling)
-CONFIG_GET(path_nul_encoded_handling)
-CONFIG_GET(path_nul_raw_handling)
 CONFIG_GET(generate_request_uri_normalized)
 CONFIG_GET(tx_auto_destroy)
 
@@ -144,16 +133,6 @@ static int htpy_config_set_##ATTR(htpy_config *self, PyObject *value, void *clos
 	return 0; \
 }
 
-CONFIG_SET(path_case_insensitive)
-CONFIG_SET(path_compress_separators)
-CONFIG_SET(path_backslash_separators)
-CONFIG_SET(path_control_char_handling)
-CONFIG_SET(path_convert_utf8)
-CONFIG_SET(path_decode_separators)
-CONFIG_SET(path_invalid_encoding_handling)
-CONFIG_SET(path_invalid_utf8_handling)
-CONFIG_SET(path_nul_encoded_handling)
-CONFIG_SET(path_nul_raw_handling)
 CONFIG_SET(generate_request_uri_normalized)
 CONFIG_SET(tx_auto_destroy)
 
@@ -183,76 +162,10 @@ static int htpy_config_set_log_level(htpy_config *self, PyObject *value, void *c
 	return 0;
 }
 
-/* This is a special case attribute setter - it checks the return value */
-static int htpy_config_set_spersonality(htpy_config *self, PyObject *value, void *closure) {
-	int v;
-
-	if (!value) {
-		PyErr_SetString(htpy_error, "Value may not be None");
-		return -1;
-	}
-
-	if (!PyInt_Check(value)) {
-		PyErr_SetString(htpy_error, "Attribute must be of type int.");
-		return -1;
-	}
-
-	v = (int) PyInt_AsLong(value);
-
-	if (htp_config_set_server_personality((htp_cfg_t *) self->cfg, v) != HTP_OK) {
-		PyErr_SetString(htpy_error, "Invalid spersonality.");
-		return -1;
-	}
-
-	return 0;
-}
-
 static PyGetSetDef htpy_config_getseters[] = {
 	{ "log_level", (getter) htpy_config_get_log_level,
 	  (setter) htpy_config_set_log_level,
 	  "Logs with a level less than this will be ignored.", NULL },
-	{ "spersonality", (getter) htpy_config_get_spersonality,
-	  (setter) htpy_config_set_spersonality,
-	  "Server personality. This affects multiple other attributes.", NULL },
-	{ "path_case_insensitive", (getter) htpy_config_get_path_case_insensitive,
-	  (setter) htpy_config_set_path_case_insensitive,
-	  "Convert paths to lowercase.", NULL },
-	{ "path_compress_separators",
-	  (getter) htpy_config_get_path_compress_separators,
-	  (setter) htpy_config_set_path_compress_separators,
-	  "Compress sequential path separators into one.", NULL },
-	{ "path_backslash_separators",
-	  (getter) htpy_config_get_path_backslash_separators,
-	  (setter) htpy_config_set_path_backslash_separators,
-	  "Treat backslash as a path separator", NULL },
-	{ "path_control_char_handling",
-	  (getter) htpy_config_get_path_control_char_handling,
-	  (setter) htpy_config_set_path_control_char_handling,
-	  "How the parser expects a path with a control char to be handled", NULL },
-	{ "path_convert_utf8", (getter) htpy_config_get_path_convert_utf8,
-	  (setter) htpy_config_set_path_convert_utf8,
-	  "Convert UTF-8 to single byte stream using default best-fit mapping.",
-	  NULL },
-	{ "path_decode_separators",
-	  (getter) htpy_config_get_path_decode_separators,
-	  (setter) htpy_config_set_path_decode_separators,
-	  "decode path separators", NULL },
-	{ "path_invalid_encoding_handling",
-	  (getter) htpy_config_get_path_invalid_encoding_handling,
-	  (setter) htpy_config_set_path_invalid_encoding_handling,
-	  "How server reacts to invalid encoding in path.", NULL },
-	{ "path_invalid_utf8_handling",
-	  (getter) htpy_config_get_path_invalid_utf8_handling,
-	  (setter) htpy_config_set_path_invalid_utf8_handling,
-	  "How server reacts to invalid UTF-8 characters in path.", NULL },
-	{ "path_nul_encoded_handling",
-	  (getter) htpy_config_get_path_nul_encoded_handling,
-	  (setter) htpy_config_set_path_nul_encoded_handling,
-	  "How server reacts to encoded NUL bytes.", NULL },
-	{ "path_nul_raw_handling",
-	  (getter) htpy_config_get_path_nul_raw_handling,
-	  (setter) htpy_config_set_path_nul_raw_handling,
-	  "How server reacts to raw NUL bytes.", NULL },
 	{ "generate_request_uri_normalized",
 	  (getter) htpy_config_get_generate_request_uri_normalized,
 	  (setter) htpy_config_set_generate_request_uri_normalized,
@@ -315,19 +228,19 @@ typedef struct {
 	htp_connp_t *connp;
 	PyObject *obj_store;
 	/* Callbacks */
-	PyObject *transaction_start_callback;
+	PyObject *request_start_callback;
 	PyObject *request_line_callback;
 	PyObject *request_uri_normalize_callback;
 	PyObject *request_headers_callback;
 	PyObject *request_body_data_callback;
 	PyObject *request_trailer_callback;
-	PyObject *request_done_callback;
+	PyObject *request_complete_callback;
 	PyObject *response_start_callback;
 	PyObject *response_line_callback;
 	PyObject *response_headers_callback;
 	PyObject *response_body_data_callback;
 	PyObject *response_trailer_callback;
-	PyObject *response_done_callback;
+	PyObject *response_complete_callback;
 	PyObject *log_callback;
 } htpy_connp;
 
@@ -345,19 +258,19 @@ static void htpy_connp_dealloc(htpy_connp *self) {
 	 * libhtp backed storage.
 	 */
 	Py_XDECREF(self->obj_store);
-	Py_XDECREF(self->transaction_start_callback);
+	Py_XDECREF(self->request_start_callback);
 	Py_XDECREF(self->request_line_callback);
 	Py_XDECREF(self->request_uri_normalize_callback);
 	Py_XDECREF(self->request_headers_callback);
 	Py_XDECREF(self->request_body_data_callback);
 	Py_XDECREF(self->request_trailer_callback);
-	Py_XDECREF(self->request_done_callback);
+	Py_XDECREF(self->request_complete_callback);
 	Py_XDECREF(self->response_start_callback);
 	Py_XDECREF(self->response_line_callback);
 	Py_XDECREF(self->response_headers_callback);
 	Py_XDECREF(self->response_body_data_callback);
 	Py_XDECREF(self->response_trailer_callback);
-	Py_XDECREF(self->response_done_callback);
+	Py_XDECREF(self->response_complete_callback);
 	Py_XDECREF(self->log_callback);
 	htp_connp_destroy_all(self->connp);
 	self->ob_type->tp_free((PyObject *) self);
@@ -365,19 +278,31 @@ static void htpy_connp_dealloc(htpy_connp *self) {
 
 static int htpy_connp_init(htpy_connp *self, PyObject *args, PyObject *kwds) {
 	PyObject *cfg_obj = NULL;
+	htp_cfg_t *cfg = NULL;
 
-	if (!PyArg_ParseTuple(args, "O:htpy_connp_init", &cfg_obj))
+	if (!PyArg_ParseTuple(args, "|O:htpy_connp_init", &cfg_obj))
 		return -1;
 
-	if (cfg_obj) {
-		self->connp = htp_connp_create_copycfg(((htpy_config *) cfg_obj)->cfg);
-		if (!self->connp)
+	/*
+	 * If we are not given a config object as an argument, * create an
+	 * htp_cfg_t and use that.
+	 */
+	if (!cfg_obj) {
+		cfg = htp_config_create();
+		htp_config_set_tx_auto_destroy(cfg, 1);
+		if (!cfg)
 			return -1;
-
-		htp_connp_set_user_data(((htpy_connp *) self)->connp, (void *) self);
+		self->connp = htp_connp_create(cfg);
 	}
-	else
+	else {
+		htp_config_set_tx_auto_destroy(((htpy_config *) cfg_obj)->cfg, 1);
+		self->connp = htp_connp_create(((htpy_config *) cfg_obj)->cfg);
+	}
+
+	if (!self->connp)
 		return -1;
+
+	htp_connp_set_user_data(self->connp, (void *) self);
 
 	return 0;
 }
@@ -419,17 +344,17 @@ int htpy_##CB##_callback(htp_connp_t *connp) { \
 	return((int) i); \
 }
 
-CALLBACK(transaction_start)
+CALLBACK(request_start)
 CALLBACK(request_line)
 CALLBACK(request_uri_normalize)
 CALLBACK(request_headers)
 CALLBACK(request_trailer)
-CALLBACK(request_done)
+CALLBACK(request_complete)
 CALLBACK(response_start)
 CALLBACK(response_line)
 CALLBACK(response_headers)
 CALLBACK(response_trailer)
-CALLBACK(response_done)
+CALLBACK(response_complete)
 
 /* These callbacks take a htp_tx_data_t pointer. */
 #define CALLBACK_TX(CB) \
@@ -560,19 +485,19 @@ static PyObject *htpy_connp_register_##CB(PyObject *self, PyObject *args) { \
 	return res; \
 }
 
-REGISTER_CALLBACK(transaction_start)
+REGISTER_CALLBACK(request_start)
 REGISTER_CALLBACK(request_line)
 REGISTER_CALLBACK(request_uri_normalize)
 REGISTER_CALLBACK(request_headers)
 REGISTER_CALLBACK(request_body_data)
 REGISTER_CALLBACK(request_trailer)
-REGISTER_CALLBACK(request_done)
+REGISTER_CALLBACK(request_complete)
 REGISTER_CALLBACK(response_start)
 REGISTER_CALLBACK(response_line)
 REGISTER_CALLBACK(response_headers)
 REGISTER_CALLBACK(response_body_data)
 REGISTER_CALLBACK(response_trailer)
-REGISTER_CALLBACK(response_done)
+REGISTER_CALLBACK(response_complete)
 REGISTER_CALLBACK(log)
 
 static PyObject *htpy_connp_register_request_file_data(PyObject *self, PyObject *args) {
@@ -745,11 +670,11 @@ static PyObject *htpy_connp_##TYPE##_data(PyObject *self, PyObject *args) { \
 	if (!PyArg_ParseTuple(args, "s#:htpy_connp_##TYPE##_data", &data, &len)) \
 		return NULL; \
 	x = htp_connp_##TYPE##_data(((htpy_connp *) self)->connp, NULL, (unsigned char *) data, len); \
-	if (x == STREAM_STATE_ERROR) { \
+	if (x == HTP_STREAM_ERROR) { \
 		PyErr_SetString(htpy_error, "Stream error."); \
 		return NULL; \
 	} \
-	if (x == STREAM_STATE_STOP) { \
+	if (x == HTP_STREAM_STOP) { \
 		PyErr_SetString(htpy_stop, "Stream stop."); \
 		return NULL; \
 	} \
@@ -909,8 +834,11 @@ static PyMethodDef htpy_connp_methods[] = {
 	  METH_NOARGS, "Return a dictionary of all response headers." },
 	{ "get_response_status", htpy_connp_get_response_status, METH_VARARGS,
 	  "Return the response status as an integer." },
-	{ "register_transaction_start", htpy_connp_register_transaction_start,
-	  METH_VARARGS, "Register a hook for start of a transaction." },
+	/* This one is deprecated. */
+	{ "register_transaction_start", htpy_connp_register_request_start,
+	  METH_VARARGS, "DEPRECATED: Register a hook for start of a request." },
+	{ "register_request_start", htpy_connp_register_request_start,
+	  METH_VARARGS, "Register a hook for start of a request." },
 	{ "register_request_line", htpy_connp_register_request_line, METH_VARARGS,
 	  "Register a hook for right after request line has been parsed." },
 	{ "register_request_uri_normalize",
@@ -929,9 +857,9 @@ static PyMethodDef htpy_connp_methods[] = {
 	  METH_VARARGS,
 	  "Register a hook for right after headers have been parsed." },
 	/* This one is deprecated. */
-	{ "register_request", htpy_connp_register_request_done, METH_VARARGS,
+	{ "register_request", htpy_connp_register_request_complete, METH_VARARGS,
 	  "DEPRECATED: Register a callback for when the entire request is parsed." },
-	{ "register_request_done", htpy_connp_register_request_done, METH_VARARGS,
+	{ "register_request_complete", htpy_connp_register_request_complete, METH_VARARGS,
 	  "Register a callback for when the entire request is parsed." },
 	{ "register_response_start", htpy_connp_register_response_start,
 	  METH_VARARGS,
@@ -948,9 +876,9 @@ static PyMethodDef htpy_connp_methods[] = {
 	  METH_VARARGS,
 	  "Register a hook for right after headers have been parsed." },
 	/* This one is deprecated. */
-	{ "register_response", htpy_connp_register_response_done, METH_VARARGS,
+	{ "register_response", htpy_connp_register_response_complete, METH_VARARGS,
 	  "DEPRECATED: Register a hook for right after an entire response has been parsed." },
-	{ "register_response_done", htpy_connp_register_response_done, METH_VARARGS,
+	{ "register_response_complete", htpy_connp_register_response_complete, METH_VARARGS,
 	  "Register a hook for right after an entire response has been parsed." },
 	{ "register_log", htpy_connp_register_log, METH_VARARGS,
 	  "Register a callback for when a log message is generated." },
@@ -1018,40 +946,28 @@ static PyTypeObject htpy_connp_type = {
 };
 
 static PyObject *htpy_init(PyObject *self, PyObject *args) {
-	PyObject *cfg;
+	htp_cfg_t *cfg;
 	PyObject *connp;
 	PyObject *tuple;
-
-	cfg = htpy_config_new(&htpy_config_type, NULL, NULL);
-	if (!cfg) {
-		PyErr_SetString(htpy_error, "Unable to make new config.");
-		return NULL;
-	}
-
-	if (htpy_config_init((htpy_config *) cfg, NULL, NULL) == -1) {
-		PyErr_SetString(htpy_error, "Unable to init new config.");
-		Py_DECREF(cfg);
-		return NULL;
-	}
-
-	htp_config_set_tx_auto_destroy(((htpy_config *) cfg)->cfg, 1);
 
 	connp = htpy_connp_new(&htpy_connp_type, NULL, NULL);
 	if (!connp) {
 		PyErr_SetString(htpy_error, "Unable to make new connection parser.");
-		Py_DECREF(cfg);
+		htp_config_destroy(cfg);
 		return NULL;
 	}
 
-	/* Pass the config in as a tuple. New style arguments! */
-	tuple = Py_BuildValue("(O)", cfg);
+	/*
+	 * We have to create an empty tuple here to pass in to the connection
+	 * parser init method.
+	 */
+	tuple = Py_BuildValue("()", NULL);
 	if (htpy_connp_init((htpy_connp *) connp, tuple, NULL) == -1) {
 		PyErr_SetString(htpy_error, "Unable to init new connection parser.");
-		Py_DECREF(cfg);
+		htp_config_destroy(cfg);
 		return NULL;
 	}
 	Py_DECREF(tuple);
-	Py_DECREF(cfg);
 
 	return(connp);
 }
@@ -1086,7 +1002,7 @@ PyMODINIT_FUNC inithtpy(void) {
 	PyModule_AddObject(m, "connp", (PyObject *) &htpy_connp_type);
 
 	PyModule_AddStringMacro(m, HTPY_VERSION);
-	PyModule_AddStringMacro(m, HTP_BASE_VERSION_TEXT);
+	PyModule_AddStringMacro(m, HTP_VERSION_STRING);
 
 	PyModule_AddIntMacro(m, HTP_ERROR);
 	PyModule_AddIntMacro(m, HTP_OK);
@@ -1096,9 +1012,9 @@ PyMODINIT_FUNC inithtpy(void) {
 	PyModule_AddIntMacro(m, HTP_DECLINED);
 
 	PyModule_AddIntMacro(m, HTP_PROTOCOL_UNKNOWN);
-	PyModule_AddIntMacro(m, HTTP_0_9);
-	PyModule_AddIntMacro(m, HTTP_1_0);
-	PyModule_AddIntMacro(m, HTTP_1_1);
+	PyModule_AddIntMacro(m, HTP_PROTOCOL_0_9);
+	PyModule_AddIntMacro(m, HTP_PROTOCOL_1_0);
+	PyModule_AddIntMacro(m, HTP_PROTOCOL_1_1);
 
 	PyModule_AddIntMacro(m, COMPRESSION_NONE);
 	PyModule_AddIntMacro(m, COMPRESSION_GZIP);
@@ -1120,35 +1036,12 @@ PyMODINIT_FUNC inithtpy(void) {
 	PyModule_AddIntMacro(m, HOOK_DECLINED);
 	PyModule_AddIntMacro(m, HOOK_STOP);
 
-	PyModule_AddIntMacro(m, STREAM_STATE_NEW);
-	PyModule_AddIntMacro(m, STREAM_STATE_OPEN);
-	PyModule_AddIntMacro(m, STREAM_STATE_CLOSED);
-	PyModule_AddIntMacro(m, STREAM_STATE_ERROR);
-	PyModule_AddIntMacro(m, STREAM_STATE_TUNNEL);
-	PyModule_AddIntMacro(m, STREAM_STATE_DATA_OTHER);
-	PyModule_AddIntMacro(m, STREAM_STATE_DATA);
-	PyModule_AddIntMacro(m, STREAM_STATE_STOP);
-
-	PyModule_AddIntMacro(m, HTP_SERVER_MINIMAL);
-	PyModule_AddIntMacro(m, HTP_SERVER_GENERIC);
-	PyModule_AddIntMacro(m, HTP_SERVER_IDS);
-	PyModule_AddIntMacro(m, HTP_SERVER_IIS_4_0);
-	PyModule_AddIntMacro(m, HTP_SERVER_IIS_5_0);
-	PyModule_AddIntMacro(m, HTP_SERVER_IIS_5_1);
-	PyModule_AddIntMacro(m, HTP_SERVER_IIS_6_0);
-	PyModule_AddIntMacro(m, HTP_SERVER_IIS_7_0);
-	PyModule_AddIntMacro(m, HTP_SERVER_IIS_7_5);
-	PyModule_AddIntMacro(m, HTP_SERVER_TOMCAT_6_0);
-	PyModule_AddIntMacro(m, HTP_SERVER_APACHE);
-	PyModule_AddIntMacro(m, HTP_SERVER_APACHE_2_2);
-
-	PyModule_AddIntMacro(m, STATUS_400);
-	PyModule_AddIntMacro(m, STATUS_404);
-	PyModule_AddIntMacro(m, TERMINATE);
-	PyModule_AddIntMacro(m, NONE);
-
-	PyModule_AddIntMacro(m, URL_DECODER_PRESERVE_PERCENT);
-	PyModule_AddIntMacro(m, URL_DECODER_REMOVE_PERCENT);
-	PyModule_AddIntMacro(m, URL_DECODER_DECODE_INVALID);
-	PyModule_AddIntMacro(m, URL_DECODER_STATUS_400);
+	PyModule_AddIntMacro(m, HTP_STREAM_NEW);
+	PyModule_AddIntMacro(m, HTP_STREAM_OPEN);
+	PyModule_AddIntMacro(m, HTP_STREAM_CLOSED);
+	PyModule_AddIntMacro(m, HTP_STREAM_ERROR);
+	PyModule_AddIntMacro(m, HTP_STREAM_TUNNEL);
+	PyModule_AddIntMacro(m, HTP_STREAM_DATA_OTHER);
+	PyModule_AddIntMacro(m, HTP_STREAM_DATA);
+	PyModule_AddIntMacro(m, HTP_STREAM_STOP);
 }
