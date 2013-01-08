@@ -96,7 +96,7 @@ callable python block. There are a number of callbacks, which fall into three
 categories:
 
 <b>Regular callbacks:</b>
-* transaction_start: Called as soon as a new transaction is started. (XXX: DEFINE A TRANSACTION!)
+* request_start: Called as soon as a new transaction is started.
 * request_line: Called after the request line has been parsed.
 * request_uri_normalize: Called right before the URI is normalized. When a URI
   is normalized default fields are filled in if they are not specified. This
@@ -106,14 +106,14 @@ categories:
 * request_headers: Called right after all the headers have been parsed and
   basic sanity checks have passed.
 * request_trailer: Called right after all the request headers have been parsed.
-* request: Called right after an entire request is parsed.
+* request_complete: Called right after an entire request is parsed.
 * response_start: Called as soon as the parser is ready for a response.
 * response_line: Called right after the response line has been parsed.
 * response_headers: Called right after all the headers have been parsed and
   basic sanity checks have passed.
 * response_trailer: Called right after all the response headers have been
   parsed.
-* response: Called right after an entire response is parsed.
+* response_complete: Called right after an entire response is parsed.
 
 <b>Transaction callbacks:</b>
 * request_body_data: Called whenever a body data chunk is processed.
