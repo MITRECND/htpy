@@ -295,65 +295,6 @@ alter the parser in odd ways.
  * htpy.HTP_LOG_INFO (4)
  * htpy.HTP_LOG_DEBUG (5)
  * htpy.HTP_LOG_DEBUG2 (6)
-* spersonality: Server personality used when parsing the data. Libhtp uses this
-  value to determine how to parse the data (some servers normalize differently,
-  treat path separators differently, etc). Htpy provides macros that map
-  directly to the values used internally by libhtp.
- * htpy.HTP_SERVER_MINIMAL (DEFAULT)
- * htpy.HTP_SERVER_GENERIC
- * htpy.HTP_SERVER_IDS
- * htpy.HTP_SERVER_IIS_4_0
- * htpy.HTP_SERVER_IIS_5_0
- * htpy.HTP_SERVER_IIS_5_1
- * htpy.HTP_SERVER_IIS_6_0
- * htpy.HTP_SERVER_IIS_7_0
- * htpy.HTP_SERVER_IIS_7_5
- * htpy.HTP_SERVER_TOMCAT_6_0
- * htpy.HTP_SERVER_APACHE
- * htpy.HTP_SERVER_APACHE_2_2
-* path_case_insensitive: Convert URI path element to lower case. DEFAULT: 0,
-  though can change if you set spersonality
-* path_compress_separators: Compress sequential path separators. Backslash and
-  decode separators are used before compression. DEFAULT: 0
-* path_backslash_separators: Treat backslash as a path separator. DEFAULT:
-  0
-* path_control_char_handling: How should the parser expect a path with a
-  control char to be handled.
- * htpy.NONE (DEFAULT)
- * htpy.STATUS_400
-* path_convert_utf8: Convert UTF-8 to single byte stream using default best-fit
-  mapping. Setting this to 0 will result in the UTF-8 still being validated.
-  DEFAULT: 0
-* path_decode_separators: Whether encoded path segment separators will be
-  decoded.
- * 0 (DEFAULT)
- * 1
- * htpy.STATUS_404 (Expect a 404 on the response)
-* path_invalid_encoding_handling: Configures how server reacts to invalid
-  encoding in path.
- * htpy.URL_DECODER_PRESERVE_PERCENT (DEFAULT)
- * htpy.URL_DECODER_REMOVE_PERCENT
- * htpy.URL_DECODER_DECODE_INVALID
- * htpy.URL_DECODER_STATUS_400
-* path_invalid_utf8_handling: Configures how server reacts to invalid UTF-8
-  characters in path. This setting will not affect path normalization; it only
-  controls what response status we expect for a request that contains invalid
-  UTF-8 characters.
- * 0 (DEFAULT)
- * htpy.STATUS_400
-* path_nul_encoded_handling: Configures how server reacts to encoded NUL bytes.
-  Some servers will terminate path at NUL, while some will respond with 400 or
-  404. The default is to leave the NUL byte.
- * 0 (DEFAULT)
- * htpy.TERMINATE
- * htpy.STATUS_400
- * htpy.STATUS_404
-* path_nul_raw_handling:  Configures how server reacts to raw NUL bytes. Some
-  servers will terminate path at NUL, while some will respond with 400 or 404.
-  The default is to leave the NUL byte.
- * htpy.TERMINATE
- * htpy.STATUS_400
- * htpy.STATUS_404
 * generate_request_uri_normalized: Normalize the request URI. The default is 0.
 * tx_auto_destroy: Automatically destroy transactions when done.
 
