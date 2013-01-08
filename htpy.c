@@ -1002,7 +1002,6 @@ PyMODINIT_FUNC inithtpy(void) {
 	PyModule_AddObject(m, "connp", (PyObject *) &htpy_connp_type);
 
 	PyModule_AddStringMacro(m, HTPY_VERSION);
-	PyModule_AddStringMacro(m, HTP_VERSION_STRING);
 
 	PyModule_AddIntMacro(m, HTP_ERROR);
 	PyModule_AddIntMacro(m, HTP_OK);
