@@ -90,6 +90,8 @@ static int htpy_config_init(htpy_config *self, PyObject *args, PyObject *kwds) {
 	if (!self->cfg)
 		return -1;
 
+	htp_config_set_tx_auto_destroy(self->cfg, 1);
+
 	return 0;
 }
 
@@ -289,15 +291,13 @@ static int htpy_connp_init(htpy_connp *self, PyObject *args, PyObject *kwds) {
 	 */
 	if (!cfg_obj) {
 		cfg = htp_config_create();
-		htp_config_set_tx_auto_destroy(cfg, 1);
 		if (!cfg)
 			return -1;
+		htp_config_set_tx_auto_destroy(cfg, 1);
 		self->connp = htp_connp_create(cfg);
 	}
-	else {
-		htp_config_set_tx_auto_destroy(((htpy_config *) cfg_obj)->cfg, 1);
+	else
 		self->connp = htp_connp_create(((htpy_config *) cfg_obj)->cfg);
-	}
 
 	if (!self->connp)
 		return -1;
@@ -946,14 +946,12 @@ static PyTypeObject htpy_connp_type = {
 };
 
 static PyObject *htpy_init(PyObject *self, PyObject *args) {
-	htp_cfg_t *cfg;
 	PyObject *connp;
 	PyObject *tuple;
 
 	connp = htpy_connp_new(&htpy_connp_type, NULL, NULL);
 	if (!connp) {
 		PyErr_SetString(htpy_error, "Unable to make new connection parser.");
-		htp_config_destroy(cfg);
 		return NULL;
 	}
 
@@ -964,7 +962,6 @@ static PyObject *htpy_init(PyObject *self, PyObject *args) {
 	tuple = Py_BuildValue("()", NULL);
 	if (htpy_connp_init((htpy_connp *) connp, tuple, NULL) == -1) {
 		PyErr_SetString(htpy_error, "Unable to init new connection parser.");
-		htp_config_destroy(cfg);
 		return NULL;
 	}
 	Py_DECREF(tuple);
