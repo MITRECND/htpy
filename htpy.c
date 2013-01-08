@@ -27,7 +27,7 @@
 #include <structmember.h>
 #include "htp.h"
 
-#define HTPY_VERSION "0.9"
+#define HTPY_VERSION "0.10"
 
 /*
  * Compatability shims.
