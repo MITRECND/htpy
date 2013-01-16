@@ -713,6 +713,58 @@ static PyObject *htpy_connp_clear_error(PyObject *self, PyObject *args) {
 	Py_RETURN_NONE;
 }
 
+static PyObject *htpy_connp_get_request_protocol(PyObject *self, PyObject *args) {
+	PyObject *ret;
+
+	if (!((htpy_connp *) self)->connp->in_tx)
+		Py_RETURN_NONE;
+
+	if (!((htpy_connp *) self)->connp->in_tx->request_protocol)
+		Py_RETURN_NONE;
+
+	ret =  Py_BuildValue("s#", bstr_ptr(((htpy_connp *) self)->connp->in_tx->request_protocol));
+	return ret;
+}
+
+static PyObject *htpy_connp_get_request_protocol_number(PyObject *self, PyObject *args) {
+	PyObject *ret;
+
+	if (!((htpy_connp *) self)->connp->in_tx)
+		Py_RETURN_NONE;
+
+	if (!((htpy_connp *) self)->connp->in_tx->request_protocol_number)
+		Py_RETURN_NONE;
+
+	ret =  Py_BuildValue("i", ((htpy_connp *) self)->connp->in_tx->request_protocol_number);
+	return ret;
+}
+
+static PyObject *htpy_connp_get_response_protocol(PyObject *self, PyObject *args) {
+	PyObject *ret;
+
+	if (!((htpy_connp *) self)->connp->out_tx)
+		Py_RETURN_NONE;
+
+	if (!((htpy_connp *) self)->connp->out_tx->response_protocol)
+		Py_RETURN_NONE;
+
+	ret =  Py_BuildValue("s#", bstr_ptr(((htpy_connp *) self)->connp->out_tx->response_protocol));
+	return ret;
+}
+
+static PyObject *htpy_connp_get_response_protocol_number(PyObject *self, PyObject *args) {
+	PyObject *ret;
+
+	if (!((htpy_connp *) self)->connp->out_tx)
+		Py_RETURN_NONE;
+
+	if (!((htpy_connp *) self)->connp->out_tx->response_protocol_number)
+		Py_RETURN_NONE;
+
+	ret =  Py_BuildValue("i", ((htpy_connp *) self)->connp->out_tx->response_protocol_number);
+	return ret;
+}
+
 static PyObject *htpy_connp_get_uri(PyObject *self, PyObject *args) {
 	htp_uri_t *uri;
 	int fail = 0;
@@ -896,6 +948,14 @@ static PyMethodDef htpy_connp_methods[] = {
 	  "Return a dictionary of the last error for the parser." },
 	{ "clear_error", htpy_connp_clear_error, METH_NOARGS,
 	  "Clear last error for the parser." },
+	{ "get_request_protocol", htpy_connp_get_request_protocol, METH_NOARGS,
+	  "Return request protocol as a string." },
+	{ "get_request_protocol_number", htpy_connp_get_request_protocol_number, METH_NOARGS,
+	  "Return request protocol number." },
+	{ "get_response_protocol", htpy_connp_get_response_protocol, METH_NOARGS,
+	  "Return response protocol as a string." },
+	{ "get_response_protocol_number", htpy_connp_get_response_protocol_number, METH_NOARGS,
+	  "Return response protocol number." },
 	{ "get_uri", htpy_connp_get_uri, METH_NOARGS,
 	  "Return a dictionary of the URI." },
 	{ "get_method", htpy_connp_get_method, METH_NOARGS,
