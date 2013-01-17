@@ -337,6 +337,10 @@ Connection parser object
 </pre>
 * clear_error(): Clear the last saved error. XXX: Is this worth keeping? A
   new error message will overwrite the old one.
+* get_request_protocol(): Return the protocol as a string without version.
+* get_request_protocol_number(): Return the protocol number. Prefer using htpy.HTP_PROTOCOL_* constants with output values.
+* get_response_protocol(): Return the protocol as a string without version.
+* get_response_protocol_number(): Return the protocol number. Prefer using htpy.HTP_PROTOCOL_* constants with output values.
 * get_uri(): Return a dictionary of the parsed URI. Depending upon the
   normalization setting this dictionary can be the URI as it was parsed or as
   it was normalized. In the case of a normalized URI the missing parts wil be
