@@ -29,29 +29,6 @@
 
 #define HTPY_VERSION "0.10"
 
-/*
- * Compatability shims.
- * libhtp stopped using HOOK_ constants, but there is existing code
- * using htpy that uses the deprecated constants. Support them for the
- * foreseable future. All new code should not use these as they will
- * be removed at some point in the future.
- */
-#ifndef HOOK_STOP
-#define HOOK_STOP HTP_STOP
-#endif
-
-#ifndef HOOK_ERROR
-#define HOOK_ERROR HTP_ERROR
-#endif
-
-#ifndef HOOK_OK
-#define HOOK_OK HTP_OK
-#endif
-
-#ifndef HOOK_DECLINED
-#define HOOK_DECLINED HTP_DECLINED
-#endif
-
 static PyObject *htpy_error;
 static PyObject *htpy_stop;
 
@@ -886,9 +863,6 @@ static PyMethodDef htpy_connp_methods[] = {
 	  METH_NOARGS, "Return a dictionary of all response headers." },
 	{ "get_response_status", htpy_connp_get_response_status, METH_VARARGS,
 	  "Return the response status as an integer." },
-	/* This one is deprecated. */
-	{ "register_transaction_start", htpy_connp_register_request_start,
-	  METH_VARARGS, "DEPRECATED: Register a hook for start of a request." },
 	{ "register_request_start", htpy_connp_register_request_start,
 	  METH_VARARGS, "Register a hook for start of a request." },
 	{ "register_request_line", htpy_connp_register_request_line, METH_VARARGS,
@@ -908,9 +882,6 @@ static PyMethodDef htpy_connp_methods[] = {
 	{ "register_request_trailer", htpy_connp_register_request_trailer,
 	  METH_VARARGS,
 	  "Register a hook for right after headers have been parsed." },
-	/* This one is deprecated. */
-	{ "register_request", htpy_connp_register_request_complete, METH_VARARGS,
-	  "DEPRECATED: Register a callback for when the entire request is parsed." },
 	{ "register_request_complete", htpy_connp_register_request_complete, METH_VARARGS,
 	  "Register a callback for when the entire request is parsed." },
 	{ "register_response_start", htpy_connp_register_response_start,
@@ -927,9 +898,6 @@ static PyMethodDef htpy_connp_methods[] = {
 	{ "register_response_trailer", htpy_connp_register_response_trailer,
 	  METH_VARARGS,
 	  "Register a hook for right after headers have been parsed." },
-	/* This one is deprecated. */
-	{ "register_response", htpy_connp_register_response_complete, METH_VARARGS,
-	  "DEPRECATED: Register a hook for right after an entire response has been parsed." },
 	{ "register_response_complete", htpy_connp_register_response_complete, METH_VARARGS,
 	  "Register a hook for right after an entire response has been parsed." },
 	{ "register_log", htpy_connp_register_log, METH_VARARGS,
@@ -1082,15 +1050,6 @@ PyMODINIT_FUNC inithtpy(void) {
 	PyModule_AddIntMacro(m, HTP_LOG_INFO);
 	PyModule_AddIntMacro(m, HTP_LOG_DEBUG);
 	PyModule_AddIntMacro(m, HTP_LOG_DEBUG2);
-
-	/*
-	 * These are deprecated by libhtp.
-	 * You should be using the HTP_ equivalents.
-	 */
-	PyModule_AddIntMacro(m, HOOK_ERROR);
-	PyModule_AddIntMacro(m, HOOK_OK);
-	PyModule_AddIntMacro(m, HOOK_DECLINED);
-	PyModule_AddIntMacro(m, HOOK_STOP);
 
 	PyModule_AddIntMacro(m, HTP_STREAM_NEW);
 	PyModule_AddIntMacro(m, HTP_STREAM_OPEN);
