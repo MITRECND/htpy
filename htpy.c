@@ -27,7 +27,7 @@
 #include <structmember.h>
 #include "htp.h"
 
-#define HTPY_VERSION "0.10"
+#define HTPY_VERSION "0.11"
 
 static PyObject *htpy_error;
 static PyObject *htpy_stop;
