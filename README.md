@@ -366,15 +366,13 @@ When the callbacks are called are documented elsewhere.
 * register_request_headers(callback)
 * register_request_body_data(callback)
 * register_request_trailer(callback)
-* register_request(callback) # DEPRECATED, will be removed soon.
-* register_request_done(callback)
+* register_request_complete(callback)
 * register_response_start(callback)
 * register_response_line(callback)
 * register_response_headers(callback)
 * register_response_body_data(callback)
 * register_response_trailer(callback)
-* register_response(callback) # DEPRECATED, will be removed soon.
-* register_response_done(callback)
+* register_response_complete(callback)
 * register_log(callback)
 
 ###Attributes
