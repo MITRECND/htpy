@@ -220,6 +220,7 @@ Request file data callbacks are passed one argument:
  * tmpname: The filename on disk where the data is being written. This is an
    optional entry in the dictionary. If libhtp is not carving the file then
    it will be left out of the dictionary.
+
 <pre>
 def file_data_callback(data):
 	print "Wrote %i bytes to %s for %s" % (len(data['data']), data['tmpname'], data['filename'])
