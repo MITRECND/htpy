@@ -26,8 +26,9 @@
 #include <Python.h>
 #include <structmember.h>
 #include "htp.h"
+#include "htp_private.h"
 
-#define HTPY_VERSION "0.11"
+#define HTPY_VERSION "0.12"
 
 static PyObject *htpy_error;
 static PyObject *htpy_stop;
@@ -37,7 +38,7 @@ static PyObject *htpy_stop;
  * parser. Most callbacks are given a way to eventually get to the connection
  * parser by doing something like this:
  *
- * PyObject *obj = (PyObject *) htp_connp_get_user_data(txd->tx->connp);
+ * PyObject *obj = (PyObject *) htp_connp_get_user_data(tx->connp);
  *
  * We store the python objects for the callbacks in the connection parser
  * object. Once we have the connection parser using the above snippet
@@ -211,15 +212,20 @@ typedef struct {
 	PyObject *request_line_callback;
 	PyObject *request_uri_normalize_callback;
 	PyObject *request_headers_callback;
+	PyObject *request_header_data_callback;
 	PyObject *request_body_data_callback;
 	PyObject *request_trailer_callback;
+	PyObject *request_trailer_data_callback;
 	PyObject *request_complete_callback;
 	PyObject *response_start_callback;
 	PyObject *response_line_callback;
 	PyObject *response_headers_callback;
+	PyObject *response_header_data_callback;
 	PyObject *response_body_data_callback;
 	PyObject *response_trailer_callback;
+	PyObject *response_trailer_data_callback;
 	PyObject *response_complete_callback;
+	PyObject *transaction_complete_callback;
 	PyObject *log_callback;
 } htpy_connp;
 
@@ -241,15 +247,20 @@ static void htpy_connp_dealloc(htpy_connp *self) {
 	Py_XDECREF(self->request_line_callback);
 	Py_XDECREF(self->request_uri_normalize_callback);
 	Py_XDECREF(self->request_headers_callback);
+	Py_XDECREF(self->request_header_data_callback);
 	Py_XDECREF(self->request_body_data_callback);
 	Py_XDECREF(self->request_trailer_callback);
+	Py_XDECREF(self->request_trailer_data_callback);
 	Py_XDECREF(self->request_complete_callback);
 	Py_XDECREF(self->response_start_callback);
 	Py_XDECREF(self->response_line_callback);
 	Py_XDECREF(self->response_headers_callback);
+	Py_XDECREF(self->response_header_data_callback);
 	Py_XDECREF(self->response_body_data_callback);
 	Py_XDECREF(self->response_trailer_callback);
+	Py_XDECREF(self->response_trailer_data_callback);
 	Py_XDECREF(self->response_complete_callback);
+	Py_XDECREF(self->transaction_complete_callback);
 	Py_XDECREF(self->log_callback);
 	htp_connp_destroy_all(self->connp);
 	self->ob_type->tp_free((PyObject *) self);
@@ -287,20 +298,20 @@ static int htpy_connp_init(htpy_connp *self, PyObject *args, PyObject *kwds) {
 /*
  * Callback handlers.
  *
- * Libhtp will call one of these callbacks. This callback will then convert
- * the htp_connp_t pointer into a PyObject and pass that to the real callback.
+ * Libhtp will call one of these callbacks. This callback will then get the
+ * connp, convert it into a PyObject and pass that to the real callback.
  * It will then convert the returned PyObject to an int and pass that back to
  * libhtp.
  *
- * The callbacks that take a htp_tx_data_t are defined with CALLBACK_TX. The
+ * The callbacks that take a htp_tx_t are defined with CALLBACK_TX. The
  * log callback is not defined in a macro because there is only one of it's
  * type.
  *
  * XXX: Add support for removing callbacks?
  */
 #define CALLBACK(CB) \
-int htpy_##CB##_callback(htp_connp_t *connp) { \
-	PyObject *obj = (PyObject *) htp_connp_get_user_data(connp); \
+int htpy_##CB##_callback(htp_tx_t *tx) { \
+	PyObject *obj = (PyObject *) htp_connp_get_user_data(tx->connp); \
 	PyObject *arglist; \
 	PyObject *res; \
 	long i; \
@@ -332,6 +343,7 @@ CALLBACK(response_line)
 CALLBACK(response_headers)
 CALLBACK(response_trailer)
 CALLBACK(response_complete)
+CALLBACK(transaction_complete)
 
 /* These callbacks take a htp_tx_data_t pointer. */
 #define CALLBACK_TX(CB) \
@@ -357,9 +369,14 @@ int htpy_##CB##_callback(htp_tx_data_t *txd) { \
 	return((int) i); \
 }
 
+CALLBACK_TX(request_header_data)
 CALLBACK_TX(request_body_data)
+CALLBACK_TX(request_trailer_data)
+CALLBACK_TX(response_header_data)
 CALLBACK_TX(response_body_data)
+CALLBACK_TX(response_trailer_data)
 
+/* Another special case callback. This one takes a htp_file_data_t pointer. */
 int htpy_request_file_data_callback(htp_file_data_t *file_data) {
 	long i;
 	PyObject *res;
@@ -466,15 +483,20 @@ REGISTER_CALLBACK(request_start)
 REGISTER_CALLBACK(request_line)
 REGISTER_CALLBACK(request_uri_normalize)
 REGISTER_CALLBACK(request_headers)
+REGISTER_CALLBACK(request_header_data)
 REGISTER_CALLBACK(request_body_data)
 REGISTER_CALLBACK(request_trailer)
+REGISTER_CALLBACK(request_trailer_data)
 REGISTER_CALLBACK(request_complete)
 REGISTER_CALLBACK(response_start)
 REGISTER_CALLBACK(response_line)
 REGISTER_CALLBACK(response_headers)
+REGISTER_CALLBACK(response_header_data)
 REGISTER_CALLBACK(response_body_data)
 REGISTER_CALLBACK(response_trailer)
+REGISTER_CALLBACK(response_trailer_data)
 REGISTER_CALLBACK(response_complete)
+REGISTER_CALLBACK(transaction_complete)
 REGISTER_CALLBACK(log)
 
 static PyObject *htpy_connp_register_request_file_data(PyObject *self, PyObject *args) {
@@ -555,7 +577,7 @@ static PyObject *htpy_connp_get_all_##TYPE##_headers(PyObject *self, PyObject *a
 		return NULL; \
 	} \
 	for (i = 0, n = htp_table_size(tx->TYPE##_headers); i < n; i++) { \
-		htp_table_get_index(tx->TYPE##_headers, i, NULL, (void **)&hdr); \
+		hdr = htp_table_get_index(tx->TYPE##_headers, i, NULL); \
 		key = Py_BuildValue("s#", bstr_ptr(hdr->name), bstr_len(hdr->name)); \
 		val = Py_BuildValue("s#", bstr_ptr(hdr->value), bstr_len(hdr->value)); \
 		if (!key || !val) { \
@@ -873,6 +895,9 @@ static PyMethodDef htpy_connp_methods[] = {
 	{ "register_request_headers", htpy_connp_register_request_headers,
 	  METH_VARARGS,
 	  "Register a hook for right after headers have been parsed and sanity checked." },
+	{ "register_request_header_data", htpy_connp_register_request_header_data,
+	  METH_VARARGS,
+	  "Register a hook for right as headers are being parsed and sanity checked." },
 	{ "register_request_body_data", htpy_connp_register_request_body_data,
 	  METH_VARARGS,
 	  "Register a hook for when a piece of request body data is processed." },
@@ -881,7 +906,10 @@ static PyMethodDef htpy_connp_methods[] = {
 	  "Register a hook for when a full request body data is processed." },
 	{ "register_request_trailer", htpy_connp_register_request_trailer,
 	  METH_VARARGS,
-	  "Register a hook for right after headers have been parsed." },
+	  "Register a hook for request trailer completion." },
+	{ "register_request_trailer_data", htpy_connp_register_request_trailer_data,
+	  METH_VARARGS,
+	  "Register a hook request trialer data." },
 	{ "register_request_complete", htpy_connp_register_request_complete, METH_VARARGS,
 	  "Register a callback for when the entire request is parsed." },
 	{ "register_response_start", htpy_connp_register_response_start,
@@ -892,14 +920,21 @@ static PyMethodDef htpy_connp_methods[] = {
 	  "Register a hook for right after response line has been parsed." },
 	{ "register_response_headers", htpy_connp_register_response_headers,
 	  METH_VARARGS, "Register a hook for right after headers have been parsed and sanity checked." },
+	{ "register_response_header_data", htpy_connp_register_response_header_data,
+	  METH_VARARGS, "Register a hook for right as headers have been parsed and sanity checked." },
 	{ "register_response_body_data", htpy_connp_register_response_body_data,
 	  METH_VARARGS,
 	  "Register a hook for when a piece of response body data is processed. Chunked and gzip'ed data are handled." },
 	{ "register_response_trailer", htpy_connp_register_response_trailer,
 	  METH_VARARGS,
-	  "Register a hook for right after headers have been parsed." },
+	  "Register a hook for response trailer completion." },
+	{ "register_response_trailer_data", htpy_connp_register_response_trailer_data,
+	  METH_VARARGS,
+	  "Register a hook for response trailer data." },
 	{ "register_response_complete", htpy_connp_register_response_complete, METH_VARARGS,
 	  "Register a hook for right after an entire response has been parsed." },
+	{ "register_transaction_complete", htpy_connp_register_transaction_complete, METH_VARARGS,
+	  "Register a hook for right after a transaction has completed." },
 	{ "register_log", htpy_connp_register_log, METH_VARARGS,
 	  "Register a callback for when a log message is generated." },
 	{ "set_obj", htpy_connp_set_obj, METH_VARARGS,
@@ -1040,9 +1075,9 @@ PyMODINIT_FUNC inithtpy(void) {
 	PyModule_AddIntMacro(m, HTP_PROTOCOL_1_0);
 	PyModule_AddIntMacro(m, HTP_PROTOCOL_1_1);
 
-	PyModule_AddIntMacro(m, COMPRESSION_NONE);
-	PyModule_AddIntMacro(m, COMPRESSION_GZIP);
-	PyModule_AddIntMacro(m, COMPRESSION_DEFLATE);
+	PyModule_AddIntMacro(m, HTP_COMPRESSION_NONE);
+	PyModule_AddIntMacro(m, HTP_COMPRESSION_GZIP);
+	PyModule_AddIntMacro(m, HTP_COMPRESSION_DEFLATE);
 
 	PyModule_AddIntMacro(m, HTP_LOG_ERROR);
 	PyModule_AddIntMacro(m, HTP_LOG_WARNING);
