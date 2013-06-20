@@ -28,7 +28,7 @@
 #include "htp.h"
 #include "htp_private.h"
 
-#define HTPY_VERSION "0.12"
+#define HTPY_VERSION "0.13"
 
 static PyObject *htpy_error;
 static PyObject *htpy_stop;
@@ -94,7 +94,6 @@ static PyObject *htpy_config_get_##ATTR(htpy_config *self, void *closure) { \
 }
 
 CONFIG_GET(log_level)
-CONFIG_GET(generate_request_uri_normalized)
 CONFIG_GET(tx_auto_destroy)
 
 #define CONFIG_SET(ATTR) \
@@ -113,7 +112,6 @@ static int htpy_config_set_##ATTR(htpy_config *self, PyObject *value, void *clos
 	return 0; \
 }
 
-CONFIG_SET(generate_request_uri_normalized)
 CONFIG_SET(tx_auto_destroy)
 
 /*
@@ -146,10 +144,6 @@ static PyGetSetDef htpy_config_getseters[] = {
 	{ "log_level", (getter) htpy_config_get_log_level,
 	  (setter) htpy_config_set_log_level,
 	  "Logs with a level less than this will be ignored.", NULL },
-	{ "generate_request_uri_normalized",
-	  (getter) htpy_config_get_generate_request_uri_normalized,
-	  (setter) htpy_config_set_generate_request_uri_normalized,
-	  "Generate a normalized URI", NULL },
 	{ "tx_auto_destroy",
 	  (getter) htpy_config_get_tx_auto_destroy,
 	  (setter) htpy_config_set_tx_auto_destroy,
