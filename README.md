@@ -296,7 +296,6 @@ alter the parser in odd ways.
  * htpy.HTP_LOG_INFO (4)
  * htpy.HTP_LOG_DEBUG (5)
  * htpy.HTP_LOG_DEBUG2 (6)
-* generate_request_uri_normalized: Normalize the request URI. The default is 0.
 * tx_auto_destroy: Automatically destroy transactions when done.
 
 Connection parser object
