@@ -648,6 +648,21 @@ static PyObject *htpy_connp_get_response_status(PyObject *self, PyObject *args) 
 		return NULL;
 	}
 
+	ret = Py_BuildValue("s#", bstr_ptr(tx->response_status), bstr_len(tx->response_status));
+
+	return ret;
+}
+
+static PyObject *htpy_connp_get_response_status_number(PyObject *self, PyObject *args) {
+	PyObject *ret;
+	htp_tx_t *tx = NULL;
+
+	tx = htp_list_get(((htpy_connp *) self)->connp->conn->transactions, htp_list_size(((htpy_connp *) self)->connp->conn->transactions) - 1);
+	if (!tx) {
+		PyErr_SetString(htpy_error, "Missing transaction.");
+		return NULL;
+	}
+
 	ret = Py_BuildValue("i", tx->response_status_number);
 
 	return ret;
@@ -877,8 +892,10 @@ static PyMethodDef htpy_connp_methods[] = {
 	  METH_NOARGS, "Return a dictionary of all request headers." },
 	{ "get_all_response_headers", htpy_connp_get_all_response_headers,
 	  METH_NOARGS, "Return a dictionary of all response headers." },
+	{ "get_response_status_number", htpy_connp_get_response_status_number, METH_VARARGS,
+	  "Return the response status number as an integer." },
 	{ "get_response_status", htpy_connp_get_response_status, METH_VARARGS,
-	  "Return the response status as an integer." },
+	  "Return the response status as bstr." },
 	{ "register_request_start", htpy_connp_register_request_start,
 	  METH_VARARGS, "Register a hook for start of a request." },
 	{ "register_request_line", htpy_connp_register_request_line, METH_VARARGS,
