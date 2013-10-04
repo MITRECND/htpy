@@ -895,7 +895,7 @@ static PyMethodDef htpy_connp_methods[] = {
 	{ "get_response_status_number", htpy_connp_get_response_status_number, METH_VARARGS,
 	  "Return the response status number as an integer." },
 	{ "get_response_status", htpy_connp_get_response_status, METH_VARARGS,
-	  "Return the response status as bstr." },
+	  "Return the full response status as a string." },
 	{ "register_request_start", htpy_connp_register_request_start,
 	  METH_VARARGS, "Register a hook for start of a request." },
 	{ "register_request_line", htpy_connp_register_request_line, METH_VARARGS,
