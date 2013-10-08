@@ -7,10 +7,10 @@ import os, os.path
 
 pathjoin = os.path.join
 
-GITVER   = '0.5.6'
-PKGNAME  = 'libhtp-' + GITVER
+GITVER   = '0.5.7'
+PKGNAME  = 'htp-' + GITVER
 PKGTAR   = PKGNAME + '.tar.gz'
-BUILDDIR = 'libhtp-' + GITVER
+BUILDDIR = 'htp-' + GITVER
 
 INCLUDE_DIRS  = ['/usr/local/include', '/opt/local/include', '/usr/include']
 LIBRARY_DIRS  = ['/usr/lib', '/usr/local/lib']
@@ -22,6 +22,7 @@ class htpyMaker(build):
     include_dirs = [ pathjoin(HTPDIR, 'htp') ]
     library_dirs = []
     extra_objects  = [ pathjoin(HTPDIR, 'htp/.libs', 'libhtp.a') ]
+    libhtp = pathjoin(HTPDIR, 'htp/.libs', 'libhtp.a')
     uname = os.uname()[0]
     if uname != 'Linux':
         EXTRA_OBJECTS.append('-liconv')
@@ -29,14 +30,14 @@ class htpyMaker(build):
     def buildHtp(self):
         # extremely crude package builder
         try:
-            os.stat(self.HTPDIR)
+            os.stat(self.libhtp)
             return None           # assume already built
         except OSError:
             pass
 
         spawn(['tar', '-zxf', self.HTPTAR], search_path = 1)
         os.chdir(self.HTPDIR)
-        spawn([pathjoin('.','autogen.sh')], '-i')
+        #spawn([pathjoin('.','autogen.sh')], '-i')
         spawn([pathjoin('.','configure'), 'CFLAGS=-fPIC'])
         spawn(['make'], search_path = 1)
         os.chdir('..')
@@ -50,7 +51,7 @@ EXTRA_OBJECTS = htpyMaker.extra_objects + EXTRA_OBJECTS
 
 setup (# Distribution meta-data
         name = "htpy",
-        version = "0.14",
+        version = "0.15",
         description = "python bindings for libhtp",
         author = "Wesley Shields",
         author_email = "wshields@mitre.org",
