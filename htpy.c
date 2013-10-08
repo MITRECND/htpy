@@ -638,7 +638,7 @@ static PyObject *htpy_connp_del_obj(PyObject *self, PyObject *args) {
  * XXX: Not sure I like mucking around in the transaction to get the status,
  * but I'm not sure of a better way.
  */
-static PyObject *htpy_connp_get_response_status(PyObject *self, PyObject *args) {
+static PyObject *htpy_connp_get_response_status_string(PyObject *self, PyObject *args) {
 	PyObject *ret;
 	htp_tx_t *tx = NULL;
 
@@ -653,7 +653,7 @@ static PyObject *htpy_connp_get_response_status(PyObject *self, PyObject *args) 
 	return ret;
 }
 
-static PyObject *htpy_connp_get_response_status_number(PyObject *self, PyObject *args) {
+static PyObject *htpy_connp_get_response_status(PyObject *self, PyObject *args) {
 	PyObject *ret;
 	htp_tx_t *tx = NULL;
 
@@ -892,9 +892,9 @@ static PyMethodDef htpy_connp_methods[] = {
 	  METH_NOARGS, "Return a dictionary of all request headers." },
 	{ "get_all_response_headers", htpy_connp_get_all_response_headers,
 	  METH_NOARGS, "Return a dictionary of all response headers." },
-	{ "get_response_status_number", htpy_connp_get_response_status_number, METH_VARARGS,
+	{ "get_response_status", htpy_connp_get_response_status_number, METH_VARARGS,
 	  "Return the response status number as an integer." },
-	{ "get_response_status", htpy_connp_get_response_status, METH_VARARGS,
+	{ "get_response_status_string", htpy_connp_get_response_status, METH_VARARGS,
 	  "Return the response status as bstr." },
 	{ "register_request_start", htpy_connp_register_request_start,
 	  METH_VARARGS, "Register a hook for start of a request." },
