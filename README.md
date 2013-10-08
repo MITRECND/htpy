@@ -310,6 +310,8 @@ Connection parser object
 * get_all_response_headers(): Return a dictionary of all response headers. The
   key will be the header name and the value will be the header value.
 * get_response_status(): Return the status code of the response as an integer.
+* get_response_status_string(): Return the status code of the response as a
+  string.
 * set_obj(object): Pass ''object'' to each callback as the last argument. Using
   this without altering the callback definition to account for the new object
   will cause htpy to raise an error when calling your callback.
