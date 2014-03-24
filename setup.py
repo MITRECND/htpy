@@ -27,6 +27,15 @@ class htpyMaker(build):
     if uname != 'Linux':
         EXTRA_OBJECTS.append('-liconv')
 
+    # XCode 5.1 treats unrecognized compiler options as hard errors.
+    # Sadly Apple ships Python compiled with -mno-fused-madd, which
+    # according to clang used in XCode 5.1 is unrecognized.
+    #
+    # For more information see the compiler section at:
+    # https://developer.apple.com/library/ios/releasenotes/DeveloperTools/RN-Xcode/Introduction/Introduction.html
+    if uname == 'Darwin':
+        os.environ['ARCHFLAGS'] = '-Wno-error=unused-command-line-argument-hard-error-in-future'
+
     def buildHtp(self):
         # extremely crude package builder
         try:
