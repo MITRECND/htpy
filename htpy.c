@@ -668,6 +668,21 @@ static PyObject *htpy_connp_get_response_status(PyObject *self, PyObject *args) 
 	return ret;
 }
 
+static PyObject *htpy_connp_get_response_line(PyObject *self, PyObject *args) {
+	PyObject *ret;
+	htp_tx_t *tx = NULL;
+
+	tx = htp_list_get(((htpy_connp *) self)->connp->conn->transactions, htp_list_size(((htpy_connp *) self)->connp->conn->transactions) - 1);
+	if (!tx) {
+		PyErr_SetString(htpy_error, "Missing transaction.");
+		return NULL;
+	}
+
+	ret = Py_BuildValue("s#", bstr_ptr(tx->response_line), bstr_len(tx->response_line));
+
+	return ret;
+}
+
 /* These do the actual parsing. */
 #define DATA(TYPE) \
 static PyObject *htpy_connp_##TYPE##_data(PyObject *self, PyObject *args) { \
@@ -896,6 +911,8 @@ static PyMethodDef htpy_connp_methods[] = {
 	  "Return the response status number as an integer." },
 	{ "get_response_status_string", htpy_connp_get_response_status_string, METH_VARARGS,
 	  "Return the response status as string." },
+	{ "get_response_line", htpy_connp_get_response_line, METH_VARARGS,
+	  "Return the response status line as string." },
 	{ "register_request_start", htpy_connp_register_request_start,
 	  METH_VARARGS, "Register a hook for start of a request." },
 	{ "register_request_line", htpy_connp_register_request_line, METH_VARARGS,
