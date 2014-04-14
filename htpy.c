@@ -683,6 +683,19 @@ static PyObject *htpy_connp_get_response_line(PyObject *self, PyObject *args) {
 	return ret;
 }
 
+static PyObject *htpy_connp_get_request_line(PyObject *self, PyObject *args) {
+	PyObject *ret;
+
+	if (!((htpy_connp *) self)->connp->in_tx)
+		Py_RETURN_NONE;
+
+	if (!((htpy_connp *) self)->connp->in_tx->request_line)
+		Py_RETURN_NONE;
+
+	ret =  Py_BuildValue("s#", bstr_ptr(((htpy_connp *) self)->connp->in_tx->request_line), bstr_len(((htpy_connp *) self)->connp->in_tx->request_line));
+	return ret;
+}
+
 /* These do the actual parsing. */
 #define DATA(TYPE) \
 static PyObject *htpy_connp_##TYPE##_data(PyObject *self, PyObject *args) { \
@@ -913,6 +926,8 @@ static PyMethodDef htpy_connp_methods[] = {
 	  "Return the response status as string." },
 	{ "get_response_line", htpy_connp_get_response_line, METH_VARARGS,
 	  "Return the response status line as string." },
+	{ "get_request_line", htpy_connp_get_request_line, METH_VARARGS,
+	  "Return the request line as string." },
 	{ "register_request_start", htpy_connp_register_request_start,
 	  METH_VARARGS, "Register a hook for start of a request." },
 	{ "register_request_line", htpy_connp_register_request_line, METH_VARARGS,
