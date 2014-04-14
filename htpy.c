@@ -730,7 +730,7 @@ static PyObject *htpy_connp_get_request_protocol(PyObject *self, PyObject *args)
 	if (!((htpy_connp *) self)->connp->in_tx->request_protocol)
 		Py_RETURN_NONE;
 
-	ret =  Py_BuildValue("s#", bstr_ptr(((htpy_connp *) self)->connp->in_tx->request_protocol));
+	ret =  Py_BuildValue("s#", bstr_ptr(((htpy_connp *) self)->connp->in_tx->request_protocol), bstr_len(((htpy_connp *) self)->connp->in_tx->request_protocol));
 	return ret;
 }
 
@@ -756,7 +756,7 @@ static PyObject *htpy_connp_get_response_protocol(PyObject *self, PyObject *args
 	if (!((htpy_connp *) self)->connp->out_tx->response_protocol)
 		Py_RETURN_NONE;
 
-	ret =  Py_BuildValue("s#", bstr_ptr(((htpy_connp *) self)->connp->out_tx->response_protocol));
+	ret =  Py_BuildValue("s#", bstr_ptr(((htpy_connp *) self)->connp->out_tx->response_protocol), bstr_len(((htpy_connp *) self)->connp->out_tx->response_protocol));
 	return ret;
 }
 
