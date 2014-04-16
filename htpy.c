@@ -670,16 +670,14 @@ static PyObject *htpy_connp_get_response_status(PyObject *self, PyObject *args) 
 
 static PyObject *htpy_connp_get_response_line(PyObject *self, PyObject *args) {
 	PyObject *ret;
-	htp_tx_t *tx = NULL;
 
-	tx = htp_list_get(((htpy_connp *) self)->connp->conn->transactions, htp_list_size(((htpy_connp *) self)->connp->conn->transactions) - 1);
-	if (!tx) {
-		PyErr_SetString(htpy_error, "Missing transaction.");
-		return NULL;
-	}
+	if (!((htpy_connp *) self)->connp->out_tx)
+		Py_RETURN_NONE;
 
-	ret = Py_BuildValue("s#", bstr_ptr(tx->response_line), bstr_len(tx->response_line));
+	if (!((htpy_connp *) self)->connp->out_tx->response_line)
+		Py_RETURN_NONE;
 
+	ret =  Py_BuildValue("s#", bstr_ptr(((htpy_connp *) self)->connp->out_tx->response_line), bstr_len(((htpy_connp *) self)->connp->out_tx->response_line));
 	return ret;
 }
 
