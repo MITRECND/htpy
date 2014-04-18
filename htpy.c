@@ -694,6 +694,92 @@ static PyObject *htpy_connp_get_request_line(PyObject *self, PyObject *args) {
 	return ret;
 }
 
+/* See HTTP 1.1 RFC 4.3 Message Body
+
+/**
+ * The length of the response message-body. In most cases, this value
+ * will be the same as response_entity_len. The values will be different
+ * if response compression or chunking were applied. In that case,
+ * response_message_len contains the length of the response body as it
+ * has been seen over TCP; response_entity_len contains the length after
+ * de-chunking and decompression.
+ */
+static PyObject *htpy_connp_get_response_message_length(PyObject *self, PyObject *args) {
+	PyObject *ret;
+
+	if (!((htpy_connp *) self)->connp->out_tx)
+		Py_RETURN_NONE;
+
+	if (!((htpy_connp *) self)->connp->out_tx->response_message_len)
+		Py_RETURN_NONE;
+
+	ret =  Py_BuildValue("i", ((htpy_connp *) self)->connp->out_tx->response_message_len);
+	return ret;
+}
+
+/**
+ * The length of the request message-body. In most cases, this value
+ * will be the same as request_entity_len. The values will be different
+ * if request compression or chunking were applied. In that case,
+ * request_message_len contains the length of the request body as it
+ * has been seen over TCP; request_entity_len contains length after
+ * de-chunking and decompression.
+*/
+static PyObject *htpy_connp_get_request_message_length(PyObject *self, PyObject *args) {
+	PyObject *ret;
+
+	if (!((htpy_connp *) self)->connp->in_tx)
+		Py_RETURN_NONE;
+
+	if (!((htpy_connp *) self)->connp->in_tx->request_message_len)
+		Py_RETURN_NONE;
+
+	ret =  Py_BuildValue("i", ((htpy_connp *) self)->connp->in_tx->request_message_len);
+	return ret;
+}
+
+/**
+ * The length of the response entity-body. In most cases, this value
+ * will be the same as response_message_len. The values will be different
+ * if request compression or chunking were applied. In that case,
+ * response_message_len contains the length of the response body as it
+ * has been seen over TCP; response_entity_len contains length after
+ * de-chunking and decompression.
+*/
+static PyObject *htpy_connp_get_response_entity_length(PyObject *self, PyObject *args) {
+	PyObject *ret;
+
+	if (!((htpy_connp *) self)->connp->out_tx)
+		Py_RETURN_NONE;
+
+	if (!((htpy_connp *) self)->connp->out_tx->response_entity_len)
+		Py_RETURN_NONE;
+
+	ret =  Py_BuildValue("i", ((htpy_connp *) self)->connp->out_tx->response_entity_len);
+	return ret;
+}
+
+/**
+ * The length of the request entity-body. In most cases, this value
+ * will be the same as request_message_len. The values will be different
+ * if request compression or chunking were applied. In that case,
+ * request_message_len contains the length of the request body as it
+ * has been seen over TCP; request_entity_len contains length after
+ * de-chunking and decompression.
+*/
+static PyObject *htpy_connp_get_request_entity_length(PyObject *self, PyObject *args) {
+	PyObject *ret;
+
+	if (!((htpy_connp *) self)->connp->in_tx)
+		Py_RETURN_NONE;
+
+	if (!((htpy_connp *) self)->connp->in_tx->request_entity_len)
+		Py_RETURN_NONE;
+
+	ret =  Py_BuildValue("i", ((htpy_connp *) self)->connp->in_tx->request_entity_len);
+	return ret;
+}
+
 /* These do the actual parsing. */
 #define DATA(TYPE) \
 static PyObject *htpy_connp_##TYPE##_data(PyObject *self, PyObject *args) { \
@@ -933,6 +1019,14 @@ static PyMethodDef htpy_connp_methods[] = {
 	{ "register_request_uri_normalize",
 	  htpy_connp_register_request_uri_normalize, METH_VARARGS,
 	  "Register a hook for right before the URI is normalized." },
+	{ "get_response_message_length", htpy_connp_get_response_message_length, METH_VARARGS,
+	  "Return the response message length before decompressed and dechunked." },
+	{ "get_request_message_length", htpy_connp_get_request_message_length, METH_VARARGS,
+	  "Return the request message length before decompressed and dechunked." },
+	{ "get_response_entity_length", htpy_connp_get_response_entity_length, METH_VARARGS,
+	  "Return the response message length after decomressed and dechunked." },
+	{ "get_request_entity_length", htpy_connp_get_request_entity_length, METH_VARARGS,
+	  "Return the request message length after decompressed and dechunked." },
 	{ "register_request_headers", htpy_connp_register_request_headers,
 	  METH_VARARGS,
 	  "Register a hook for right after headers have been parsed and sanity checked." },
