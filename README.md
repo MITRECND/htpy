@@ -116,9 +116,13 @@ categories:
 * response_complete: Called right after an entire response is parsed.
 
 <b>Transaction callbacks:</b>
+* request_header_data: Called whenever request header data is available.
+* response_header_data: Called whenever response header data is available.
 * request_body_data: Called whenever a body data chunk is processed.
 * response_body_data: Called whenever response body data is available. Gzip
   compressed data should be properly decompressed.
+* request_trailer_data: Called whenever request trailer data is available.
+* response_trailer_data: Called whenever response trailer data is available.
 
 <b>Request File Data callback:</b>
 * request_file_data: Called whenever file data is found in a request.
@@ -312,6 +316,12 @@ Connection parser object
 * get_response_status(): Return the status code of the response as an integer.
 * get_response_status_string(): Return the status code of the response as a
   string.
+* get_request_line(): Return the request line with method, path and host in one line.
+* get_response_line(): Return the response line with protocol, status code and status message in one line.
+* get_request_message_len(): Return the request message length before decompressed and dechunked.
+* get_response_message_len(): Return the response message length before decompressed and dechunked.
+* get_request_entity_len(): Return the request message length after decompressed and dechunked.
+* get_response_entity_len(): Return the request message length after decompressed and dechunked.
 * set_obj(object): Pass ''object'' to each callback as the last argument. Using
   this without altering the callback definition to account for the new object
   will cause htpy to raise an error when calling your callback.
