@@ -405,7 +405,7 @@ int htpy_request_file_data_callback(htp_file_data_t *file_data) {
 		}
 	}
 
-    if (file_data->file->tmpname) {
+	if (file_data->file->tmpname) {
 		tmpname_key = Py_BuildValue("s", "tmpname");
 		tmpname_val = Py_BuildValue("s", file_data->file->tmpname);
 		if (PyDict_SetItem(dict, tmpname_key, tmpname_val) == -1) {
@@ -677,7 +677,7 @@ static PyObject *htpy_connp_get_response_line(PyObject *self, PyObject *args) {
 	if (!((htpy_connp *) self)->connp->out_tx->response_line)
 		Py_RETURN_NONE;
 
-	ret =  Py_BuildValue("s#", bstr_ptr(((htpy_connp *) self)->connp->out_tx->response_line), bstr_len(((htpy_connp *) self)->connp->out_tx->response_line));
+	ret = Py_BuildValue("s#", bstr_ptr(((htpy_connp *) self)->connp->out_tx->response_line), bstr_len(((htpy_connp *) self)->connp->out_tx->response_line));
 	return ret;
 }
 
@@ -690,7 +690,93 @@ static PyObject *htpy_connp_get_request_line(PyObject *self, PyObject *args) {
 	if (!((htpy_connp *) self)->connp->in_tx->request_line)
 		Py_RETURN_NONE;
 
-	ret =  Py_BuildValue("s#", bstr_ptr(((htpy_connp *) self)->connp->in_tx->request_line), bstr_len(((htpy_connp *) self)->connp->in_tx->request_line));
+	ret = Py_BuildValue("s#", bstr_ptr(((htpy_connp *) self)->connp->in_tx->request_line), bstr_len(((htpy_connp *) self)->connp->in_tx->request_line));
+	return ret;
+}
+
+/* See HTTP 1.1 RFC 4.3 Message Body */
+
+/*
+ * The length of the response message-body. In most cases, this value
+ * will be the same as response_entity_len. The values will be different
+ * if response compression or chunking were applied. In that case,
+ * response_message_len contains the length of the response body as it
+ * has been seen over TCP; response_entity_len contains the length after
+ * de-chunking and decompression.
+ */
+static PyObject *htpy_connp_get_response_message_length(PyObject *self, PyObject *args) {
+	PyObject *ret;
+
+	if (!((htpy_connp *) self)->connp->out_tx)
+		Py_RETURN_NONE;
+
+	if (!((htpy_connp *) self)->connp->out_tx->response_message_len)
+		Py_RETURN_NONE;
+
+	ret = Py_BuildValue("i", ((htpy_connp *) self)->connp->out_tx->response_message_len);
+	return ret;
+}
+
+/*
+ * The length of the request message-body. In most cases, this value
+ * will be the same as request_entity_len. The values will be different
+ * if request compression or chunking were applied. In that case,
+ * request_message_len contains the length of the request body as it
+ * has been seen over TCP; request_entity_len contains length after
+ * de-chunking and decompression.
+ */
+static PyObject *htpy_connp_get_request_message_length(PyObject *self, PyObject *args) {
+	PyObject *ret;
+
+	if (!((htpy_connp *) self)->connp->in_tx)
+		Py_RETURN_NONE;
+
+	if (!((htpy_connp *) self)->connp->in_tx->request_message_len)
+		Py_RETURN_NONE;
+
+	ret = Py_BuildValue("i", ((htpy_connp *) self)->connp->in_tx->request_message_len);
+	return ret;
+}
+
+/*
+ * The length of the response entity-body. In most cases, this value
+ * will be the same as response_message_len. The values will be different
+ * if request compression or chunking were applied. In that case,
+ * response_message_len contains the length of the response body as it
+ * has been seen over TCP; response_entity_len contains length after
+ * de-chunking and decompression.
+ */
+static PyObject *htpy_connp_get_response_entity_length(PyObject *self, PyObject *args) {
+	PyObject *ret;
+
+	if (!((htpy_connp *) self)->connp->out_tx)
+		Py_RETURN_NONE;
+
+	if (!((htpy_connp *) self)->connp->out_tx->response_entity_len)
+		Py_RETURN_NONE;
+
+	ret = Py_BuildValue("i", ((htpy_connp *) self)->connp->out_tx->response_entity_len);
+	return ret;
+}
+
+/*
+ * The length of the request entity-body. In most cases, this value
+ * will be the same as request_message_len. The values will be different
+ * if request compression or chunking were applied. In that case,
+ * request_message_len contains the length of the request body as it
+ * has been seen over TCP; request_entity_len contains length after
+ * de-chunking and decompression.
+ */
+static PyObject *htpy_connp_get_request_entity_length(PyObject *self, PyObject *args) {
+	PyObject *ret;
+
+	if (!((htpy_connp *) self)->connp->in_tx)
+		Py_RETURN_NONE;
+
+	if (!((htpy_connp *) self)->connp->in_tx->request_entity_len)
+		Py_RETURN_NONE;
+
+	ret = Py_BuildValue("i", ((htpy_connp *) self)->connp->in_tx->request_entity_len);
 	return ret;
 }
 
@@ -756,7 +842,7 @@ static PyObject *htpy_connp_get_request_protocol(PyObject *self, PyObject *args)
 	if (!((htpy_connp *) self)->connp->in_tx->request_protocol)
 		Py_RETURN_NONE;
 
-	ret =  Py_BuildValue("s#", bstr_ptr(((htpy_connp *) self)->connp->in_tx->request_protocol), bstr_len(((htpy_connp *) self)->connp->in_tx->request_protocol));
+	ret = Py_BuildValue("s#", bstr_ptr(((htpy_connp *) self)->connp->in_tx->request_protocol), bstr_len(((htpy_connp *) self)->connp->in_tx->request_protocol));
 	return ret;
 }
 
@@ -769,7 +855,7 @@ static PyObject *htpy_connp_get_request_protocol_number(PyObject *self, PyObject
 	if (!((htpy_connp *) self)->connp->in_tx->request_protocol_number)
 		Py_RETURN_NONE;
 
-	ret =  Py_BuildValue("i", ((htpy_connp *) self)->connp->in_tx->request_protocol_number);
+	ret = Py_BuildValue("i", ((htpy_connp *) self)->connp->in_tx->request_protocol_number);
 	return ret;
 }
 
@@ -782,7 +868,7 @@ static PyObject *htpy_connp_get_response_protocol(PyObject *self, PyObject *args
 	if (!((htpy_connp *) self)->connp->out_tx->response_protocol)
 		Py_RETURN_NONE;
 
-	ret =  Py_BuildValue("s#", bstr_ptr(((htpy_connp *) self)->connp->out_tx->response_protocol), bstr_len(((htpy_connp *) self)->connp->out_tx->response_protocol));
+	ret = Py_BuildValue("s#", bstr_ptr(((htpy_connp *) self)->connp->out_tx->response_protocol), bstr_len(((htpy_connp *) self)->connp->out_tx->response_protocol));
 	return ret;
 }
 
@@ -795,7 +881,7 @@ static PyObject *htpy_connp_get_response_protocol_number(PyObject *self, PyObjec
 	if (!((htpy_connp *) self)->connp->out_tx->response_protocol_number)
 		Py_RETURN_NONE;
 
-	ret =  Py_BuildValue("i", ((htpy_connp *) self)->connp->out_tx->response_protocol_number);
+	ret = Py_BuildValue("i", ((htpy_connp *) self)->connp->out_tx->response_protocol_number);
 	return ret;
 }
 
@@ -933,6 +1019,14 @@ static PyMethodDef htpy_connp_methods[] = {
 	{ "register_request_uri_normalize",
 	  htpy_connp_register_request_uri_normalize, METH_VARARGS,
 	  "Register a hook for right before the URI is normalized." },
+	{ "get_response_message_length", htpy_connp_get_response_message_length, METH_VARARGS,
+	  "Return the response message length before decompressed and dechunked." },
+	{ "get_request_message_length", htpy_connp_get_request_message_length, METH_VARARGS,
+	  "Return the request message length before decompressed and dechunked." },
+	{ "get_response_entity_length", htpy_connp_get_response_entity_length, METH_VARARGS,
+	  "Return the response message length after decomressed and dechunked." },
+	{ "get_request_entity_length", htpy_connp_get_request_entity_length, METH_VARARGS,
+	  "Return the request message length after decompressed and dechunked." },
 	{ "register_request_headers", htpy_connp_register_request_headers,
 	  METH_VARARGS,
 	  "Register a hook for right after headers have been parsed and sanity checked." },
