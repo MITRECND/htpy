@@ -7,7 +7,7 @@ import os, os.path
 
 pathjoin = os.path.join
 
-GITVER   = '0.5.11'
+GITVER   = '0.5.12'
 PKGNAME  = 'htp-' + GITVER
 PKGTAR   = PKGNAME + '.tar.gz'
 BUILDDIR = 'htp-' + GITVER
@@ -26,15 +26,6 @@ class htpyMaker(build):
     uname = os.uname()[0]
     if uname != 'Linux':
         EXTRA_OBJECTS.append('-liconv')
-
-    # XCode 5.1 treats unrecognized compiler options as hard errors.
-    # Sadly Apple ships Python compiled with -mno-fused-madd, which
-    # according to clang used in XCode 5.1 is unrecognized.
-    #
-    # For more information see the compiler section at:
-    # https://developer.apple.com/library/ios/releasenotes/DeveloperTools/RN-Xcode/Introduction/Introduction.html
-    if uname == 'Darwin':
-        os.environ['ARCHFLAGS'] = '-Wno-error=unused-command-line-argument-hard-error-in-future'
 
     def buildHtp(self):
         # extremely crude package builder
@@ -60,7 +51,7 @@ EXTRA_OBJECTS = htpyMaker.extra_objects + EXTRA_OBJECTS
 
 setup (# Distribution meta-data
         name = "htpy",
-        version = "0.18",
+        version = "0.19",
         description = "python bindings for libhtp",
         author = "Wesley Shields",
         author_email = "wshields@mitre.org",
