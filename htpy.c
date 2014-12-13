@@ -200,6 +200,7 @@ static PyTypeObject htpy_config_type = {
 typedef struct {
 	PyObject_HEAD
 	htp_connp_t *connp;
+	PyObject *cfg;
 	PyObject *obj_store;
 	/* Callbacks */
 	PyObject *request_start_callback;
@@ -237,6 +238,7 @@ static void htpy_connp_dealloc(htpy_connp *self) {
 	 * libhtp backed storage.
 	 */
 	Py_XDECREF(self->obj_store);
+	Py_XDECREF(self->cfg);
 	Py_XDECREF(self->request_start_callback);
 	Py_XDECREF(self->request_line_callback);
 	Py_XDECREF(self->request_uri_normalize_callback);
@@ -262,7 +264,6 @@ static void htpy_connp_dealloc(htpy_connp *self) {
 
 static int htpy_connp_init(htpy_connp *self, PyObject *args, PyObject *kwds) {
 	PyObject *cfg_obj = NULL;
-	htp_cfg_t *cfg = NULL;
 
 	if (!PyArg_ParseTuple(args, "|O:htpy_connp_init", &cfg_obj))
 		return -1;
@@ -272,16 +273,20 @@ static int htpy_connp_init(htpy_connp *self, PyObject *args, PyObject *kwds) {
 	 * htp_cfg_t and use that.
 	 */
 	if (!cfg_obj) {
-		cfg = htp_config_create();
-		if (!cfg)
-			return -1;
-		htp_config_set_tx_auto_destroy(cfg, 1);
-		self->connp = htp_connp_create(cfg);
+		cfg_obj = PyObject_CallObject((PyObject *) &htpy_config_type, NULL);
+	} else {
+		Py_XINCREF(cfg_obj);
 	}
-	else
-		self->connp = htp_connp_create(((htpy_config *) cfg_obj)->cfg);
+
+	self->connp = htp_connp_create(((htpy_config *) cfg_obj)->cfg);
+	self->cfg = cfg_obj;
+
+	
+
 
 	if (!self->connp)
+		return -1;
+	if (!self->cfg)
 		return -1;
 
 	htp_connp_set_user_data(self->connp, (void *) self);
@@ -576,12 +581,16 @@ static PyObject *htpy_connp_get_all_##TYPE##_headers(PyObject *self, PyObject *a
 		val = Py_BuildValue("s#", bstr_ptr(hdr->value), bstr_len(hdr->value)); \
 		if (!key || !val) { \
 			Py_DECREF(ret); \
+			Py_XDECREF(key); \
+			Py_XDECREF(val); \
 			return NULL; \
 		} \
 		if (PyDict_SetItem(ret, key, val) == -1) { \
 			Py_DECREF(ret); \
 			return NULL; \
 		} \
+		Py_XDECREF(key); \
+		Py_XDECREF(val); \
 	} \
 	return ret; \
 }
@@ -912,6 +921,8 @@ static PyObject *htpy_connp_get_uri(PyObject *self, PyObject *args) {
 			fail = 1;
 		if (PyDict_SetItem(ret, key, val) == -1)
 			fail = 1;
+		Py_XDECREF(key);
+		Py_XDECREF(val);
 	}
 
 	if (uri->username) {
@@ -921,6 +932,8 @@ static PyObject *htpy_connp_get_uri(PyObject *self, PyObject *args) {
 			fail = 1;
 		if (PyDict_SetItem(ret, key, val) == -1)
 			fail = 1;
+		Py_XDECREF(key);
+		Py_XDECREF(val);
 	}
 
 	if (uri->password) {
@@ -930,6 +943,8 @@ static PyObject *htpy_connp_get_uri(PyObject *self, PyObject *args) {
 			fail = 1;
 		if (PyDict_SetItem(ret, key, val) == -1)
 			fail = 1;
+		Py_XDECREF(key);
+		Py_XDECREF(val);
 	}
 
 	if (uri->hostname) {
@@ -939,6 +954,8 @@ static PyObject *htpy_connp_get_uri(PyObject *self, PyObject *args) {
 			fail = 1;
 		if (PyDict_SetItem(ret, key, val) == -1)
 			fail = 1;
+		Py_XDECREF(key);
+		Py_XDECREF(val);
 	}
 
 	if (uri->port) {
@@ -948,6 +965,8 @@ static PyObject *htpy_connp_get_uri(PyObject *self, PyObject *args) {
 			fail = 1;
 		if (PyDict_SetItem(ret, key, val) == -1)
 			fail = 1;
+		Py_XDECREF(key);
+		Py_XDECREF(val);
 	}
 
 	if (uri->port_number) {
@@ -957,6 +976,8 @@ static PyObject *htpy_connp_get_uri(PyObject *self, PyObject *args) {
 			fail = 1;
 		if (PyDict_SetItem(ret, key, val) == -1)
 			fail = 1;
+		Py_XDECREF(key);
+		Py_XDECREF(val);
 	}
 
 	if (uri->path) {
@@ -966,6 +987,8 @@ static PyObject *htpy_connp_get_uri(PyObject *self, PyObject *args) {
 			fail = 1;
 		if (PyDict_SetItem(ret, key, val) == -1)
 			fail = 1;
+		Py_XDECREF(key);
+		Py_XDECREF(val);
 	}
 
 	if (uri->query) {
@@ -975,6 +998,8 @@ static PyObject *htpy_connp_get_uri(PyObject *self, PyObject *args) {
 			fail = 1;
 		if (PyDict_SetItem(ret, key, val) == -1)
 			fail = 1;
+		Py_XDECREF(key);
+		Py_XDECREF(val);
 	}
 
 	if (uri->fragment) {
@@ -984,6 +1009,8 @@ static PyObject *htpy_connp_get_uri(PyObject *self, PyObject *args) {
 			fail = 1;
 		if (PyDict_SetItem(ret, key, val) == -1)
 			fail = 1;
+		Py_XDECREF(key);
+		Py_XDECREF(val);
 	}
 
 	// Exception should be set by Py_BuildValue or PyDict_SetItem failing.
@@ -1101,6 +1128,11 @@ static PyMethodDef htpy_connp_methods[] = {
 	{ NULL }
 };
 
+static PyMemberDef htpy_connp_members[] = {
+	{ "cfg", T_OBJECT_EX, offsetof(htpy_connp, cfg), 0, "Configuration object"},
+	{ NULL }
+};
+
 static PyTypeObject htpy_connp_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,                               /* ob_size */
@@ -1131,7 +1163,7 @@ static PyTypeObject htpy_connp_type = {
 	0,                               /* tp_iter */
 	0,                               /* tp_iternext */
 	htpy_connp_methods,              /* tp_methods */
-	0,                               /* tp_members */
+	htpy_connp_members,              /* tp_members */
 	0,                               /* tp_getset */
 	0,                               /* tp_base */
 	0,                               /* tp_dict */
@@ -1145,24 +1177,8 @@ static PyTypeObject htpy_connp_type = {
 
 static PyObject *htpy_init(PyObject *self, PyObject *args) {
 	PyObject *connp;
-	PyObject *tuple;
 
-	connp = htpy_connp_new(&htpy_connp_type, NULL, NULL);
-	if (!connp) {
-		PyErr_SetString(htpy_error, "Unable to make new connection parser.");
-		return NULL;
-	}
-
-	/*
-	 * We have to create an empty tuple here to pass in to the connection
-	 * parser init method.
-	 */
-	tuple = Py_BuildValue("()", NULL);
-	if (htpy_connp_init((htpy_connp *) connp, tuple, NULL) == -1) {
-		PyErr_SetString(htpy_error, "Unable to init new connection parser.");
-		return NULL;
-	}
-	Py_DECREF(tuple);
+	connp = PyObject_CallObject((PyObject *) &htpy_connp_type, NULL);
 
 	return(connp);
 }
