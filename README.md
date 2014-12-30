@@ -388,4 +388,5 @@ When the callbacks are called are documented elsewhere.
 * register_log(callback)
 
 ###Attributes
-The connection parser object does not expose any attributes.
+The connection parser object contains the config object as a member, but
+you should not touch it, ever.
