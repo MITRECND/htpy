@@ -269,25 +269,26 @@ static int htpy_connp_init(htpy_connp *self, PyObject *args, PyObject *kwds) {
 		return -1;
 
 	/*
-	 * If we are not given a config object as an argument, * create an
+	 * If we are not given a config object as an argument create an
 	 * htp_cfg_t and use that.
 	 */
-	if (!cfg_obj) {
+	if (!cfg_obj)
 		cfg_obj = PyObject_CallObject((PyObject *) &htpy_config_type, NULL);
-	} else {
+	else
 		Py_XINCREF(cfg_obj);
+
+	if (!cfg_obj) {
+		PyErr_SetString(htpy_error, "Unable to create config object.");
+		return -1;
 	}
 
-	self->connp = htp_connp_create(((htpy_config *) cfg_obj)->cfg);
 	self->cfg = cfg_obj;
+	self->connp = htp_connp_create(((htpy_config *) cfg_obj)->cfg);
 
-	
-
-
-	if (!self->connp)
+	if (!self->connp) {
+		PyErr_SetString(htpy_error, "Unable to create connection parser.");
 		return -1;
-	if (!self->cfg)
-		return -1;
+	}
 
 	htp_connp_set_user_data(self->connp, (void *) self);
 
