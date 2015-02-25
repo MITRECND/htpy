@@ -25,10 +25,11 @@
 
 #include <Python.h>
 #include <structmember.h>
+#include "../config.h"
 #include "htp.h"
 #include "htp_private.h"
 
-#define HTPY_VERSION "0.20"
+#define HTPY_VERSION "0.21"
 
 static PyObject *htpy_error;
 static PyObject *htpy_stop;
