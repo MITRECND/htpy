@@ -7,7 +7,7 @@ import os, os.path
 
 pathjoin = os.path.join
 
-GITVER   = '0.5.17'
+GITVER   = '0.5.18'
 PKGNAME  = 'htp-' + GITVER
 PKGTAR   = PKGNAME + '.tar.gz'
 BUILDDIR = 'htp-' + GITVER
@@ -51,10 +51,10 @@ EXTRA_OBJECTS = htpyMaker.extra_objects + EXTRA_OBJECTS
 
 setup (# Distribution meta-data
         name = "htpy",
-        version = "0.21",
+        version = "0.22",
         description = "python bindings for libhtp",
         author = "Wesley Shields",
-        author_email = "wshields@mitre.org",
+        author_email = "wxs@atarininja.org",
         license = "BSD",
         long_description = "Python bindings for libhtp",
         cmdclass = {'build': htpyMaker},
