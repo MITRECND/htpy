@@ -7,10 +7,10 @@ import os, os.path
 
 pathjoin = os.path.join
 
-GITVER   = '0.5.19'
-PKGNAME  = 'htp-' + GITVER
+GITVER   = '0.5.21'
+PKGNAME  = 'libhtp-' + GITVER
 PKGTAR   = PKGNAME + '.tar.gz'
-BUILDDIR = 'htp-' + GITVER
+BUILDDIR = 'libhtp-' + GITVER
 
 INCLUDE_DIRS  = ['/usr/local/include', '/opt/local/include', '/usr/include']
 LIBRARY_DIRS  = ['/usr/lib', '/usr/local/lib']
@@ -37,7 +37,7 @@ class htpyMaker(build):
 
         spawn(['tar', '-zxf', self.HTPTAR], search_path = 1)
         os.chdir(self.HTPDIR)
-        #spawn([pathjoin('.','autogen.sh')], '-i')
+        spawn([pathjoin('.','autogen.sh')], '-i')
         spawn([pathjoin('.','configure'), 'CFLAGS=-fPIC'])
         spawn(['make'], search_path = 1)
         os.chdir('..')
@@ -51,7 +51,7 @@ EXTRA_OBJECTS = htpyMaker.extra_objects + EXTRA_OBJECTS
 
 setup (# Distribution meta-data
         name = "htpy",
-        version = "0.23",
+        version = "0.24",
         description = "python bindings for libhtp",
         author = "Wesley Shields",
         author_email = "wxs@atarininja.org",
