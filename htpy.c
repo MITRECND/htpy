@@ -29,7 +29,7 @@
 #include "htp.h"
 #include "htp_private.h"
 
-#define HTPY_VERSION "0.24"
+#define HTPY_VERSION "0.25"
 
 static PyObject *htpy_error;
 static PyObject *htpy_stop;
