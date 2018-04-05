@@ -301,6 +301,9 @@ alter the parser in odd ways.
  * htpy.HTP_LOG_DEBUG (5)
  * htpy.HTP_LOG_DEBUG2 (6)
 * tx_auto_destroy: Automatically destroy transactions when done.
+* response_decompression: Determine whether response bodies are
+  automatically decompressed. Default value is 1 which is enabled.
+  To disable automatic decompression set this to 0.
 
 Connection parser object
 ------------------------

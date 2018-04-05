@@ -29,7 +29,7 @@
 #include "htp.h"
 #include "htp_private.h"
 
-#define HTPY_VERSION "0.25"
+#define HTPY_VERSION "0.25.1"
 
 static PyObject *htpy_error;
 static PyObject *htpy_stop;
@@ -97,6 +97,23 @@ static PyObject *htpy_config_get_##ATTR(htpy_config *self, void *closure) { \
 CONFIG_GET(log_level)
 CONFIG_GET(tx_auto_destroy)
 
+/**
+ * To get the response decompression setting there is an int
+ * in the config called "response_decompression_enabled". Unfortunately
+ * this doesn't fit with the above macro and so instead the following
+ * function takes care of getting the value.
+ */
+
+static PyObject *htpy_config_get_response_decompression(htpy_config *self, void *closure) {
+       PyObject *ret;
+       ret = Py_BuildValue("i", self->cfg->response_decompression_enabled);
+       if (!ret) {
+               PyErr_SetString(htpy_error, "Unable to get this attribute.");
+               return NULL;
+       }
+       return(ret);
+}
+
 #define CONFIG_SET(ATTR) \
 static int htpy_config_set_##ATTR(htpy_config *self, PyObject *value, void *closure) { \
 	int v; \
@@ -114,6 +131,7 @@ static int htpy_config_set_##ATTR(htpy_config *self, PyObject *value, void *clos
 }
 
 CONFIG_SET(tx_auto_destroy)
+CONFIG_SET(response_decompression)
 
 /*
  * Sadly the log level is not exposed like others. Only way to set it
@@ -142,14 +160,19 @@ static int htpy_config_set_log_level(htpy_config *self, PyObject *value, void *c
 }
 
 static PyGetSetDef htpy_config_getseters[] = {
-	{ "log_level", (getter) htpy_config_get_log_level,
-	  (setter) htpy_config_set_log_level,
-	  "Logs with a level less than this will be ignored.", NULL },
-	{ "tx_auto_destroy",
-	  (getter) htpy_config_get_tx_auto_destroy,
-	  (setter) htpy_config_set_tx_auto_destroy,
-	  "Automatically destroy transactions", NULL },
-	{ NULL }
+    {"log_level",
+     (getter) htpy_config_get_log_level,
+     (setter) htpy_config_set_log_level,
+     "Logs with a level less than this will be ignored.", NULL},
+    {"tx_auto_destroy",
+     (getter) htpy_config_get_tx_auto_destroy,
+     (setter) htpy_config_set_tx_auto_destroy,
+     "Automatically destroy transactions", NULL},
+    {"response_decompression",
+     (getter) htpy_config_get_response_decompression,
+     (setter) htpy_config_set_response_decompression,
+     "Enable response decompression", NULL},
+    {NULL}
 };
 
 static PyMemberDef htpy_config_members[] = {

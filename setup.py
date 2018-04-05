@@ -51,20 +51,16 @@ EXTRA_OBJECTS = htpyMaker.extra_objects + EXTRA_OBJECTS
 
 setup (# Distribution meta-data
         name = "htpy",
-        version = "0.25",
+        version = "0.25.1",
         description = "python bindings for libhtp",
         author = "Wesley Shields",
         author_email = "wxs@atarininja.org",
         license = "BSD",
         long_description = "Python bindings for libhtp",
         cmdclass = {'build': htpyMaker},
-        ext_modules = [ Extension(
-                            "htpy",
-                            sources=["htpy.c"],
-                            include_dirs = INCLUDE_DIRS,
-                            library_dirs = LIBRARY_DIRS,
-                            extra_objects = EXTRA_OBJECTS
-                        ) 
-                      ],
-        url = "http://github.com/MITRECND/htpy",
-      )
+        ext_modules = [Extension("htpy",
+                                 sources=["htpy.c"],
+                                 include_dirs = INCLUDE_DIRS,
+                                 library_dirs = LIBRARY_DIRS,
+                                 extra_objects = EXTRA_OBJECTS)],
+        url = "http://github.com/MITRECND/htpy")
