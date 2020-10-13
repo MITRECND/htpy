@@ -23,13 +23,13 @@ import htpy
 def uri_callback(cp):
     uri = cp.get_uri()
     if 'path' in uri:
-        print uri['path']
+        print(uri['path'])
     return htpy.HTP_OK
 
 def request_headers_callback(cp):
     host = cp.get_request_header('Host')
     if host:
-        print host
+        print(host)
     return htpy.HTP_OK
 
 cp = htpy.init()
@@ -138,7 +138,7 @@ callback pre-pended with "register_". For example, to register a response
 callback:
 <pre>
 def response_callback(cp):
-    print "INSIDE RESPONSE CALLBACK"
+    print("INSIDE RESPONSE CALLBACK")
     return htpy.HTP_OK
 
 cp = htpy.init()
@@ -151,7 +151,7 @@ can take an optional second argument which is used to tell libhtp if it
 should write the file data to disk. For example:
 <pre>
 def file_data_callback(data):
-	print "INSIDE FILE DATA CALLBACK"
+	print("INSIDE FILE DATA CALLBACK")
 	return htpy.HTP_OK
 
 cp = htpy.init()
@@ -173,7 +173,7 @@ Regular callbacks are passed one argument:
 def request_uri_normalize_callback(cp):
     uri = cp.get_uri()
     if query in uri:
-        print uri['query']
+        print(uri['query'])
     return htpy.HTP_OK
 </pre>
 
@@ -185,7 +185,7 @@ Transaction callbacks are passed two arguments:
 
 <pre>
 def response_body_data_callback(data, length):
-    print "Got %i bytes: %s" % (length, data)
+    print("Got %i bytes: %s" % (length, data))
     return htpy.HTP_OK
 </pre>
 
@@ -207,9 +207,9 @@ def log_callback(cp, msg, level):
         elog = cp.get_last_error()
         if elog == None:
             return htpy.HTP_ERROR
-        print "%s:%i - %s (%i)" % (elog['file'], elog['line'], elog['msg'], elog['level'])
+        print("%s:%i - %s (%i)" % (elog['file'], elog['line'], elog['msg'], elog['level']))
     else:
-        print "%i - %s" % (level, msg)
+        print("%i - %s" % (level, msg))
     return htpy.HTP_OK
 </pre>
 
@@ -227,7 +227,7 @@ Request file data callbacks are passed one argument:
 
 <pre>
 def file_data_callback(data):
-	print "Wrote %i bytes to %s for %s" % (len(data['data']), data['tmpname'], data['filename'])
+	print("Wrote %i bytes to %s for %s" % (len(data['data']), data['tmpname'], data['filename']))
 	return htpy.HTP_OK
 
 cp = htpy.init()
@@ -246,8 +246,8 @@ x = "FOO"
 def request_uri_normalize_callback(cp, obj):
     uri = cp.get_uri()
     if query in uri:
-        print uri['query']
-    print obj
+        print(uri['query'])
+    print(obj)
     return htpy.HTP_OK
 
 cp = htpy.init()
